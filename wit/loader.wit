@@ -1,0 +1,35 @@
+interface wasm-loader {
+    use types.{component, error};
+
+    load: async func(wasm: stream<u8>) -> result<component, error>;
+}
+
+interface wat-loader {
+    use types.{component, error};
+
+    load: async func(wat: stream<u8>) -> result<component, error>;
+}
+
+interface filesystem-loader {
+    use types.{component, error};
+
+    load: async func(path: string) -> result<component, error>;
+}
+
+interface oci-loader {
+    use types.{component, error};
+
+    load: async func(image: string) -> result<component, error>;
+}
+
+interface wasm-directory-loader {
+    use types.{component, error};
+
+    load: async func(manifest-key: string) -> result<component, error>;
+}
+
+interface wac-loader {
+    use types.{component, error};
+
+    plug: async func(socket: borrow<component>, plugs: list<borrow<component>>) -> result<component, error>;
+}

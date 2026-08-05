@@ -1,0 +1,10 @@
+world imports {
+    import types;
+    import wasm-loader;
+    import wat-loader;
+    import filesystem-loader;
+    import oci-loader;
+    import wasm-directory-loader;
+    import wac-loader;
+    import wit;
+}

@@ -1,0 +1,16 @@
+package componentized:components;
+
+world extract-wit {
+    export componentized:component/wit@0.0.0-0;
+}
+
+world wac-loader {
+    import componentized:component/types@0.0.0-0;
+    export componentized:component/types@0.0.0-0;
+    export componentized:component/wac-loader@0.0.0-0;
+}
+
+world wasm-loader {
+    export componentized:component/types@0.0.0-0;
+    export componentized:component/wasm-loader@0.0.0-0;
+}

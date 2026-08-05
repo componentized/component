@@ -1,0 +1,17 @@
+[package]
+name = "extract-wit"
+version = "0.1.0"
+edition = "2021"
+license = "Apache-2.0"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+anyhow = { workspace = true }
+semver = "1"
+wasmparser = { workspace = true }
+wat = { workspace = true }
+wit-bindgen = { workspace = true }
+wit-component = { workspace = true }
+wit-parser = { workspace = true }

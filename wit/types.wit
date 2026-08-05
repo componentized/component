@@ -1,0 +1,13 @@
+package componentized:component@0.0.0-0;
+
+interface types {
+
+    variant error {
+        other(option<string>),
+    }
+
+    resource component {
+        into-wasm: func() -> list<u8>;
+    }
+
+}

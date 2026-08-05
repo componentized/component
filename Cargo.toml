@@ -1,0 +1,16 @@
+[workspace]
+resolver = "2"
+members = [
+    "components/*",
+]
+exclude = [
+    "components/wit",
+]
+
+[workspace.dependencies]
+anyhow = "1"
+wasmparser = "0.255.0"
+wat = "1.251.0"
+wit-bindgen = "0.60.0"
+wit-component = "0.255.0"
+wit-parser = "0.255.0"
