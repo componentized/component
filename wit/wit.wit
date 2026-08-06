@@ -2,10 +2,18 @@
 interface wit {
     use types.{component, error};
 
-    type world-id = string;
-    type interface-id = string;
-    type type-id = string;
-    type package-id = string;
+    record world-id {
+        world-id: u32,
+    }
+    record interface-id {
+        interface-id: u32,
+    }
+    record type-id {
+        type-id: u32,
+    }
+    record package-id {
+        package-id: u32,
+    }
 
     variant %type {
         %bool,
@@ -234,17 +242,12 @@ interface wit {
     }
 
     resource wit {
-        world-ids: func() -> list<world-id>;
         %world: func(id: world-id) -> option<%world>;
-        interface-ids: func() -> list<interface-id>;
         %interface: func(id: interface-id) -> option<%interface>;
-        type-ids: func() -> list<type-id>;
         %type: func(id: type-id) -> option<type-def>;
-        package-ids: func() -> list<package-id>;
         %package: func(id: package-id) -> option<%package>;
     }
 
-    parse: func(wit: string) -> result<wit, error>;
-    extract: async func(component: borrow<component>) -> result<tuple<wit, package-id>, error>;
+    extract: async func(component: borrow<component>) -> result<tuple<wit, %package>, error>;
 
 }

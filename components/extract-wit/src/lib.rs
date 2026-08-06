@@ -19,65 +19,51 @@ impl Guest for ExtractWit {
     type Wit = ExtractedWit;
 
     #[allow(async_fn_in_trait)]
-    fn parse(_wit: String) -> Result<Wit, Error> {
-        todo!()
-    }
-
-    #[allow(async_fn_in_trait)]
-    async fn extract(component: &Component) -> Result<(Wit, PackageId), Error> {
+    async fn extract(component: &Component) -> Result<(Wit, Package), Error> {
         let wasm = component.into_wasm();
-        let wit = wit_component::decode(&wasm)?;
+        let decoded = wit_component::decode(&wasm)?;
 
-        Ok((
-            Wit::new(ExtractedWit::new(wit.resolve())),
-            ExtractedWit::package_id(wit.package()),
-        ))
+        let wit = ExtractedWit::new(decoded.resolve());
+        let package = wit
+            .package(ExtractedWit::package_id(decoded.package()))
+            .expect("decoded package must exist");
+
+        Ok((Wit::new(wit), package))
     }
 }
 
 pub(crate) struct ExtractedWit {
-    world_ids: Vec<WorldId>,
-    worlds: BTreeMap<WorldId, World>,
-    interface_ids: Vec<InterfaceId>,
-    interfaces: BTreeMap<InterfaceId, Interface>,
-    type_ids: Vec<TypeId>,
-    types: BTreeMap<TypeId, TypeDef>,
-    package_ids: Vec<PackageId>,
-    packages: BTreeMap<PackageId, Package>,
+    worlds: BTreeMap<u32, World>,
+    interfaces: BTreeMap<u32, Interface>,
+    types: BTreeMap<u32, TypeDef>,
+    packages: BTreeMap<u32, Package>,
 }
 
 impl ExtractedWit {
     fn new(resolve: &wit_parser::Resolve) -> Self {
-        let worlds = Self::worlds(resolve);
-        let interfaces = Self::interfaces(resolve);
-        let types = Self::types(resolve);
-        let packages = Self::packages(resolve);
-
         Self {
-            world_ids: worlds.clone().into_keys().collect(),
-            worlds,
-            interface_ids: interfaces.clone().into_keys().collect(),
-            interfaces,
-            type_ids: types.clone().into_keys().collect(),
-            types,
-            package_ids: packages.clone().into_keys().collect(),
-            packages,
+            worlds: Self::worlds(resolve),
+            interfaces: Self::interfaces(resolve),
+            types: Self::types(resolve),
+            packages: Self::packages(resolve),
         }
     }
 
-    fn worlds(resolve: &wit_parser::Resolve) -> BTreeMap<WorldId, World> {
+    fn worlds(resolve: &wit_parser::Resolve) -> BTreeMap<u32, World> {
         resolve
             .worlds
             .clone()
             .into_iter()
             .fold(BTreeMap::new(), |mut worlds, (id, world)| {
-                worlds.insert(Self::world_id(id), Self::world(world));
+                worlds.insert(Self::world_id(id).world_id, Self::world(world));
                 worlds
             })
     }
 
     fn world_id(id: wit_parser::WorldId) -> WorldId {
-        WorldId::from(format!("world:{}", id.index()))
+        WorldId {
+            world_id: u32::try_from(id.index()).expect("id too large"),
+        }
     }
 
     fn world(world: wit_parser::World) -> World {
@@ -163,18 +149,23 @@ impl ExtractedWit {
         }
     }
 
-    fn interfaces(resolve: &wit_parser::Resolve) -> BTreeMap<InterfaceId, Interface> {
+    fn interfaces(resolve: &wit_parser::Resolve) -> BTreeMap<u32, Interface> {
         resolve.interfaces.clone().into_iter().fold(
             BTreeMap::new(),
             |mut interfaces, (id, interface)| {
-                interfaces.insert(Self::interface_id(id), Self::interface(interface));
+                interfaces.insert(
+                    Self::interface_id(id).interface_id,
+                    Self::interface(interface),
+                );
                 interfaces
             },
         )
     }
 
     fn interface_id(id: wit_parser::InterfaceId) -> InterfaceId {
-        InterfaceId::from(format!("interface:{}", id.index()))
+        InterfaceId {
+            interface_id: u32::try_from(id.index()).expect("id too large"),
+        }
     }
 
     fn interface(interface: wit_parser::Interface) -> Interface {
@@ -208,19 +199,21 @@ impl ExtractedWit {
         }
     }
 
-    fn types(resolve: &wit_parser::Resolve) -> BTreeMap<TypeId, TypeDef> {
+    fn types(resolve: &wit_parser::Resolve) -> BTreeMap<u32, TypeDef> {
         resolve
             .types
             .clone()
             .into_iter()
             .fold(BTreeMap::new(), |mut types, (id, type_def)| {
-                types.insert(Self::type_id(id), Self::type_def(type_def));
+                types.insert(Self::type_id(id).type_id, Self::type_def(type_def));
                 types
             })
     }
 
     fn type_id(id: wit_parser::TypeId) -> TypeId {
-        TypeId::from(format!("type:{}", id.index()))
+        TypeId {
+            type_id: u32::try_from(id.index()).expect("id too large"),
+        }
     }
 
     fn type_(type_: wit_parser::Type) -> Type {
@@ -379,19 +372,21 @@ impl ExtractedWit {
         }
     }
 
-    fn packages(resolve: &wit_parser::Resolve) -> BTreeMap<PackageId, Package> {
+    fn packages(resolve: &wit_parser::Resolve) -> BTreeMap<u32, Package> {
         resolve
             .packages
             .clone()
             .into_iter()
             .fold(BTreeMap::new(), |mut packages, (id, package)| {
-                packages.insert(Self::package_id(id), Self::package(package));
+                packages.insert(Self::package_id(id).package_id, Self::package(package));
                 packages
             })
     }
 
     fn package_id(id: wit_parser::PackageId) -> PackageId {
-        PackageId::from(format!("package:{}", id.index()))
+        PackageId {
+            package_id: u32::try_from(id.index()).expect("id too large"),
+        }
     }
 
     fn package(package: wit_parser::Package) -> Package {
@@ -499,43 +494,23 @@ impl ExtractedWit {
 
 impl GuestWit for ExtractedWit {
     #[allow(async_fn_in_trait)]
-    fn world_ids(&self) -> Vec<WorldId> {
-        self.world_ids.clone()
-    }
-
-    #[allow(async_fn_in_trait)]
     fn world(&self, id: WorldId) -> Option<World> {
-        self.worlds.get(&id).cloned()
-    }
-
-    #[allow(async_fn_in_trait)]
-    fn interface_ids(&self) -> Vec<InterfaceId> {
-        self.interface_ids.clone()
+        self.worlds.get(&id.world_id).cloned()
     }
 
     #[allow(async_fn_in_trait)]
     fn interface(&self, id: InterfaceId) -> Option<Interface> {
-        self.interfaces.get(&id).cloned()
-    }
-
-    #[allow(async_fn_in_trait)]
-    fn type_ids(&self) -> Vec<TypeId> {
-        self.type_ids.clone()
+        self.interfaces.get(&id.interface_id).cloned()
     }
 
     #[allow(async_fn_in_trait)]
     fn type_(&self, id: TypeId) -> Option<TypeDef> {
-        self.types.get(&id).cloned()
-    }
-
-    #[allow(async_fn_in_trait)]
-    fn package_ids(&self) -> Vec<PackageId> {
-        self.package_ids.clone()
+        self.types.get(&id.type_id).cloned()
     }
 
     #[allow(async_fn_in_trait)]
     fn package(&self, id: PackageId) -> Option<Package> {
-        self.packages.get(&id).cloned()
+        self.packages.get(&id.package_id).cloned()
     }
 }
 
