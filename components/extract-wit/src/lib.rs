@@ -7,8 +7,8 @@ use crate::{
     exports::componentized::component::wit::{
         Case, Docs, Enum, EnumCase, Field, Flag, Flags, Function, FunctionKind, Guest, GuestWit,
         Handle, IncludeName, Interface, InterfaceId, Package, PackageId, PackageName, Param,
-        Record, ResultWorkaround as Result_, Stability, Stable, Tuple, Type, TypeDef, TypeDefKind,
-        TypeId, TypeOwner, Unstable, Variant, Version, VersionIdentifier, Wit, World, WorldId,
+        Record, Result as Result_, Stability, Stable, Tuple, Type, TypeDef, TypeDefKind, TypeId,
+        TypeOwner, Unstable, Variant, Version, VersionIdentifier, Wit, World, WorldId,
         WorldInclude, WorldItem, WorldItemInterface, WorldItemType, WorldKey,
     },
 };

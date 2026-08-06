@@ -42,7 +42,7 @@ interface wit {
         %variant(%variant),
         %enum(%enum),
         %option(%type),
-        %result(result-workaround),
+        %result(%result),
         %list(tuple<%type, option<u32>>),
         %map(tuple<%type,%type>),
         %future(option<%type>),
@@ -211,7 +211,7 @@ interface wit {
         docs: docs,
     }
 
-    record result-workaround {
+    record %result {
         ok: option<%type>,
         err: option<%type>,
     }
