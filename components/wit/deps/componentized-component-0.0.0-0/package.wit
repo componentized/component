@@ -49,20 +49,8 @@ interface wac-loader {
 interface wit {
   use types.{component, error};
 
-  record world-id {
-    world-id: u32,
-  }
-
-  record interface-id {
-    interface-id: u32,
-  }
-
   record type-id {
     type-id: u32,
-  }
-
-  record package-id {
-    package-id: u32,
   }
 
   variant %type {
@@ -88,14 +76,98 @@ interface wit {
     %borrow(type-id),
   }
 
-  variant type-owner {
-    %world(world-id),
-    %interface(interface-id),
-    none,
+  record %tuple {
+    types: list<%type>,
+  }
+
+  record %result {
+    ok: option<%type>,
+    err: option<%type>,
+  }
+
+  record %list {
+    %type: %type,
+    fixed-length: option<u32>,
+  }
+
+  record %map {
+    key: %type,
+    value: %type,
+  }
+
+  variant function-kind {
+    freestanding,
+    async-freestanding,
+    method(type-id),
+    async-method(type-id),
+    %static(type-id),
+    async-static(type-id),
+    %constructor(type-id),
+  }
+
+  record param {
+    name: string,
+    %type: %type,
   }
 
   record docs {
     contents: option<string>,
+  }
+
+  record record-field {
+    name: string,
+    %type: %type,
+    docs: docs,
+  }
+
+  record %record {
+    fields: list<record-field>,
+  }
+
+  record flag {
+    name: string,
+    docs: docs,
+  }
+
+  record %flags {
+    %flags: list<flag>,
+  }
+
+  record variant-case {
+    name: string,
+    %type: option<%type>,
+    docs: docs,
+  }
+
+  record %variant {
+    cases: list<variant-case>,
+  }
+
+  record enum-case {
+    name: string,
+    docs: docs,
+  }
+
+  record %enum {
+    cases: list<enum-case>,
+  }
+
+  variant type-def-kind {
+    %record(%record),
+    %resource,
+    handle(handle),
+    %flags(%flags),
+    %tuple(%tuple),
+    %variant(%variant),
+    %enum(%enum),
+    %option(%type),
+    %result(%result),
+    %list(%list),
+    %map(%map),
+    %future(option<%type>),
+    %stream(option<%type>),
+    %type(%type),
+    unknown,
   }
 
   variant version-identifier {
@@ -127,6 +199,39 @@ interface wit {
     stable(stable),
   }
 
+  record function {
+    name: string,
+    kind: function-kind,
+    params: list<param>,
+    %result: option<%type>,
+    docs: docs,
+    stability: stability,
+    external-id: option<string>,
+  }
+
+  record interface-id {
+    interface-id: u32,
+  }
+
+  record world-id {
+    world-id: u32,
+  }
+
+  variant type-owner {
+    %world(world-id),
+    %interface(interface-id),
+    none,
+  }
+
+  record type-def {
+    name: option<string>,
+    kind: type-def-kind,
+    owner: type-owner,
+    docs: docs,
+    stability: stability,
+    external-id: option<string>,
+  }
+
   record world-item-interface {
     id: interface-id,
     stability: stability,
@@ -134,8 +239,10 @@ interface wit {
     docs: docs,
   }
 
-  record world-item-type {
-    id: type-id,
+  variant world-item {
+    %interface(world-item-interface),
+    function(function),
+    %type(type-id),
   }
 
   record include-name {
@@ -154,6 +261,29 @@ interface wit {
     %interface(interface-id),
   }
 
+  record package-id {
+    package-id: u32,
+  }
+
+  record %interface {
+    name: option<string>,
+    types: list<tuple<string, type-id>>,
+    functions: list<tuple<string, function>>,
+    docs: docs,
+    stability: stability,
+    %package: option<package-id>,
+  }
+
+  record %world {
+    name: string,
+    imports: list<tuple<world-key, world-item>>,
+    exports: list<tuple<world-key, world-item>>,
+    %package: option<package-id>,
+    docs: docs,
+    stability: stability,
+    includes: list<world-include>,
+  }
+
   record package-name {
     namespace: string,
     name: string,
@@ -167,135 +297,11 @@ interface wit {
     worlds: list<tuple<string, world-id>>,
   }
 
-  record field {
-    name: string,
-    %type: %type,
-    docs: docs,
-  }
-
-  record %record {
-    fields: list<field>,
-  }
-
-  record flag {
-    name: string,
-    docs: docs,
-  }
-
-  record %flags {
-    %flags: list<flag>,
-  }
-
-  record %tuple {
-    types: list<%type>,
-  }
-
-  record case {
-    name: string,
-    %type: option<%type>,
-    docs: docs,
-  }
-
-  record %variant {
-    cases: list<case>,
-  }
-
-  record enum-case {
-    name: string,
-    docs: docs,
-  }
-
-  record %enum {
-    cases: list<enum-case>,
-  }
-
-  record %result {
-    ok: option<%type>,
-    err: option<%type>,
-  }
-
-  variant type-def-kind {
-    %record(%record),
-    %resource,
-    handle(handle),
-    %flags(%flags),
-    %tuple(%tuple),
-    %variant(%variant),
-    %enum(%enum),
-    %option(%type),
-    %result(%result),
-    %list(tuple<%type, option<u32>>),
-    %map(tuple<%type, %type>),
-    %future(option<%type>),
-    %stream(option<%type>),
-    %type(%type),
-    unknown,
-  }
-
-  record type-def {
-    name: option<string>,
-    kind: type-def-kind,
-    owner: type-owner,
-    docs: docs,
-    stability: stability,
-    external-id: option<string>,
-  }
-
-  variant function-kind {
-    freestanding,
-    async-freestanding,
-    method(type-id),
-    async-method(type-id),
-    %static(type-id),
-    async-static(type-id),
-    %constructor(type-id),
-  }
-
-  record param {
-    name: string,
-    %type: %type,
-  }
-
-  record function {
-    name: string,
-    kind: function-kind,
-    params: list<param>,
-    %result: option<%type>,
-    docs: docs,
-    stability: stability,
-    external-id: option<string>,
-  }
-
-  record %interface {
-    name: option<string>,
-    types: list<tuple<string, type-id>>,
-    functions: list<tuple<string, function>>,
-    docs: docs,
-    stability: stability,
-    %package: option<package-id>,
-  }
-
-  variant world-item {
-    %interface(world-item-interface),
-    function(function),
-    %type(world-item-type),
-  }
-
-  record %world {
-    name: string,
-    imports: list<tuple<world-key, world-item>>,
-    exports: list<tuple<world-key, world-item>>,
-    %package: option<package-id>,
-    docs: docs,
-    stability: stability,
-    includes: list<world-include>,
-  }
-
   resource wit {
-    %world: func(id: world-id) -> option<%world>;
     %interface: func(id: interface-id) -> option<%interface>;
-    %type: func(id: type-id) -> option<type-def>;
     %package: func(id: package-id) -> option<%package>;
+    %type: func(id: type-id) -> option<type-def>;
+    %world: func(id: world-id) -> option<%world>;
   }
 
   extract: async func(component: borrow<component>) -> result<tuple<wit, %package>, error>;
