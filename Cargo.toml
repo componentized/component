@@ -12,5 +12,5 @@ anyhow = "1"
 wasmparser = "0.255.0"
 wat = "1.251.0"
 wit-bindgen = { version = "0.60.0", git = "https://github.com/bytecodealliance/wit-bindgen.git", rev = "d92cfd3497a7adfbe70f03886c11def2deab6faa" }
-wit-component = "0.255.0"
+wit-component = "0.256.0"
 wit-parser = "0.255.0"
