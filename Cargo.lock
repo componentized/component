@@ -76,7 +76,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "semver",
- "wasmparser 0.255.0",
+ "wasmparser 0.258.0",
  "wat",
  "wit-bindgen",
  "wit-component 0.255.0",
@@ -680,7 +680,6 @@ dependencies = [
  "hashbrown",
  "indexmap",
  "semver",
- "serde",
 ]
 
 [[package]]
@@ -693,6 +692,7 @@ dependencies = [
  "hashbrown",
  "indexmap",
  "semver",
+ "serde",
 ]
 
 [[package]]
