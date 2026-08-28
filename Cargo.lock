@@ -80,7 +80,7 @@ dependencies = [
  "wat",
  "wit-bindgen",
  "wit-component 0.255.0",
- "wit-parser 0.255.0",
+ "wit-parser 0.258.0",
 ]
 
 [[package]]
