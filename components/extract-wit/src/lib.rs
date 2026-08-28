@@ -5,11 +5,11 @@ use std::collections::BTreeMap;
 use crate::{
     componentized::component::types::{Component, Error},
     exports::componentized::component::wit::{
-        Case, Docs, Enum, EnumCase, Field, Flag, Flags, Function, FunctionKind, Guest, GuestWit,
-        Handle, IncludeName, Interface, InterfaceId, Package, PackageId, PackageName, Param,
-        Record, Result as Result_, Stability, Stable, Tuple, Type, TypeDef, TypeDefKind, TypeId,
-        TypeOwner, Unstable, Variant, Version, VersionIdentifier, Wit, World, WorldId,
-        WorldInclude, WorldItem, WorldItemInterface, WorldItemType, WorldKey,
+        Docs, Enum, EnumCase, Flag, Flags, Function, FunctionKind, Guest, GuestWit, Handle,
+        IncludeName, Interface, InterfaceId, List, Map, Package, PackageId, PackageName, Param,
+        Record, RecordField, Result as Result_, Stability, Stable, Tuple, Type, TypeDef,
+        TypeDefKind, TypeId, TypeOwner, Unstable, Variant, VariantCase, Version, VersionIdentifier,
+        Wit, World, WorldId, WorldInclude, WorldItem, WorldItemInterface, WorldKey,
     },
 };
 
@@ -42,22 +42,38 @@ pub(crate) struct ExtractedWit {
 impl ExtractedWit {
     fn new(resolve: &wit_parser::Resolve) -> Self {
         Self {
-            worlds: Self::worlds(resolve),
-            interfaces: Self::interfaces(resolve),
-            types: Self::types(resolve),
-            packages: Self::packages(resolve),
+            worlds: resolve.worlds.clone().into_iter().fold(
+                BTreeMap::new(),
+                |mut worlds, (id, world)| {
+                    worlds.insert(Self::world_id(id).world_id, Self::world(world));
+                    worlds
+                },
+            ),
+            interfaces: resolve.interfaces.clone().into_iter().fold(
+                BTreeMap::new(),
+                |mut interfaces, (id, interface)| {
+                    interfaces.insert(
+                        Self::interface_id(id).interface_id,
+                        Self::interface(interface),
+                    );
+                    interfaces
+                },
+            ),
+            types: resolve.types.clone().into_iter().fold(
+                BTreeMap::new(),
+                |mut types, (id, type_def)| {
+                    types.insert(Self::type_id(id).type_id, Self::type_def(type_def));
+                    types
+                },
+            ),
+            packages: resolve.packages.clone().into_iter().fold(
+                BTreeMap::new(),
+                |mut packages, (id, package)| {
+                    packages.insert(Self::package_id(id).package_id, Self::package(package));
+                    packages
+                },
+            ),
         }
-    }
-
-    fn worlds(resolve: &wit_parser::Resolve) -> BTreeMap<u32, World> {
-        resolve
-            .worlds
-            .clone()
-            .into_iter()
-            .fold(BTreeMap::new(), |mut worlds, (id, world)| {
-                worlds.insert(Self::world_id(id).world_id, Self::world(world));
-                worlds
-            })
     }
 
     fn world_id(id: wit_parser::WorldId) -> WorldId {
@@ -82,82 +98,50 @@ impl ExtractedWit {
             package: world.package.map(Self::package_id),
             docs: Self::docs(world.docs),
             stability: Self::stability(world.stability),
-            includes: Self::world_includes(world.includes),
+            includes: world
+                .includes
+                .into_iter()
+                .map(|include| WorldInclude {
+                    stability: Self::stability(include.stability),
+                    id: Self::world_id(include.id),
+                    names: include
+                        .names
+                        .into_iter()
+                        .map(|name| IncludeName {
+                            name: name.name,
+                            as_: name.as_,
+                        })
+                        .collect(),
+                })
+                .collect(),
         }
     }
 
-    fn world_entry(entry: (wit_parser::WorldKey, wit_parser::WorldItem)) -> (WorldKey, WorldItem) {
-        (Self::world_key(entry.0), Self::world_item(entry.1))
-    }
-
-    fn world_key(key: wit_parser::WorldKey) -> WorldKey {
-        match key {
-            wit_parser::WorldKey::Name(name) => WorldKey::Name(name),
-            wit_parser::WorldKey::Interface(id) => WorldKey::Interface(Self::interface_id(id)),
-        }
-    }
-
-    fn world_item(item: wit_parser::WorldItem) -> WorldItem {
-        match item {
-            wit_parser::WorldItem::Interface {
-                id,
-                stability,
-                external_id,
-                docs,
-                ..
-            } => WorldItem::Interface(WorldItemInterface {
-                id: Self::interface_id(id),
-                stability: Self::stability(stability),
-                external_id: external_id,
-                docs: Self::docs(docs),
-            }),
-            wit_parser::WorldItem::Function(function) => WorldItem::Function(Function {
-                name: function.name,
-                kind: Self::function_kind(function.kind),
-                params: Self::params(function.params),
-                result: function.result.map(Self::type_),
-                docs: Self::docs(function.docs),
-                stability: Self::stability(function.stability),
-                external_id: function.external_id,
-            }),
-            wit_parser::WorldItem::Type { id, .. } => WorldItem::Type(WorldItemType {
-                id: Self::type_id(id),
-            }),
-        }
-    }
-
-    fn world_includes(includes: Vec<wit_parser::WorldInclude>) -> Vec<WorldInclude> {
-        includes.into_iter().map(Self::world_include).collect()
-    }
-
-    fn world_include(include: wit_parser::WorldInclude) -> WorldInclude {
-        WorldInclude {
-            stability: Self::stability(include.stability),
-            id: Self::world_id(include.id),
-            names: Self::include_names(include.names),
-        }
-    }
-
-    fn include_names(names: Vec<wit_parser::IncludeName>) -> Vec<IncludeName> {
-        names.into_iter().map(Self::include_name).collect()
-    }
-
-    fn include_name(name: wit_parser::IncludeName) -> IncludeName {
-        IncludeName {
-            name: name.name,
-            as_: name.as_,
-        }
-    }
-
-    fn interfaces(resolve: &wit_parser::Resolve) -> BTreeMap<u32, Interface> {
-        resolve.interfaces.clone().into_iter().fold(
-            BTreeMap::new(),
-            |mut interfaces, (id, interface)| {
-                interfaces.insert(
-                    Self::interface_id(id).interface_id,
-                    Self::interface(interface),
-                );
-                interfaces
+    fn world_entry(
+        (key, item): (wit_parser::WorldKey, wit_parser::WorldItem),
+    ) -> (WorldKey, WorldItem) {
+        (
+            match key {
+                wit_parser::WorldKey::Name(name) => WorldKey::Name(name),
+                wit_parser::WorldKey::Interface(id) => WorldKey::Interface(Self::interface_id(id)),
+            },
+            match item {
+                wit_parser::WorldItem::Interface {
+                    id,
+                    stability,
+                    external_id,
+                    docs,
+                    ..
+                } => WorldItem::Interface(WorldItemInterface {
+                    id: Self::interface_id(id),
+                    stability: Self::stability(stability),
+                    external_id: external_id,
+                    docs: Self::docs(docs),
+                }),
+                wit_parser::WorldItem::Function(function) => {
+                    WorldItem::Function(Self::function(function))
+                }
+                wit_parser::WorldItem::Type { id, .. } => WorldItem::Type(Self::type_id(id)),
             },
         )
     }
@@ -190,24 +174,34 @@ impl ExtractedWit {
     fn function(function: wit_parser::Function) -> Function {
         Function {
             name: function.name,
-            kind: Self::function_kind(function.kind),
-            params: Self::params(function.params),
+            kind: match function.kind {
+                wit_parser::FunctionKind::Freestanding => FunctionKind::Freestanding,
+                wit_parser::FunctionKind::AsyncFreestanding => FunctionKind::AsyncFreestanding,
+                wit_parser::FunctionKind::Method(id) => FunctionKind::Method(Self::type_id(id)),
+                wit_parser::FunctionKind::AsyncMethod(id) => {
+                    FunctionKind::AsyncMethod(Self::type_id(id))
+                }
+                wit_parser::FunctionKind::Static(id) => FunctionKind::Static(Self::type_id(id)),
+                wit_parser::FunctionKind::AsyncStatic(id) => {
+                    FunctionKind::AsyncStatic(Self::type_id(id))
+                }
+                wit_parser::FunctionKind::Constructor(id) => {
+                    FunctionKind::Constructor(Self::type_id(id))
+                }
+            },
+            params: function
+                .params
+                .into_iter()
+                .map(|param| Param {
+                    name: param.name,
+                    type_: Self::type_(param.ty),
+                })
+                .collect(),
             result: function.result.map(Self::type_),
             docs: Self::docs(function.docs),
             stability: Self::stability(function.stability),
             external_id: function.external_id,
         }
-    }
-
-    fn types(resolve: &wit_parser::Resolve) -> BTreeMap<u32, TypeDef> {
-        resolve
-            .types
-            .clone()
-            .into_iter()
-            .fold(BTreeMap::new(), |mut types, (id, type_def)| {
-                types.insert(Self::type_id(id).type_id, Self::type_def(type_def));
-                types
-            })
     }
 
     fn type_id(id: wit_parser::TypeId) -> TypeId {
@@ -240,7 +234,13 @@ impl ExtractedWit {
         TypeDef {
             name: type_def.name,
             kind: Self::type_def_kind(type_def.kind),
-            owner: Self::type_owner(type_def.owner),
+            owner: match type_def.owner {
+                wit_parser::TypeOwner::World(id) => TypeOwner::World(Self::world_id(id)),
+                wit_parser::TypeOwner::Interface(id) => {
+                    TypeOwner::Interface(Self::interface_id(id))
+                }
+                wit_parser::TypeOwner::None => TypeOwner::None,
+            },
             docs: Self::docs(type_def.docs),
             stability: Self::stability(type_def.stability),
             external_id: type_def.external_id,
@@ -260,13 +260,12 @@ impl ExtractedWit {
             wit_parser::TypeDefKind::Enum(enum_) => TypeDefKind::Enum(Self::enum_(enum_)),
             wit_parser::TypeDefKind::Option(option) => TypeDefKind::Option(Self::type_(option)),
             wit_parser::TypeDefKind::Result(result) => TypeDefKind::Result(Self::result(result)),
-            wit_parser::TypeDefKind::List(list) => TypeDefKind::List((Self::type_(list), None)),
-            wit_parser::TypeDefKind::Map(key, value) => {
-                TypeDefKind::Map((Self::type_(key), Self::type_(value)))
-            }
+            wit_parser::TypeDefKind::List(list) => TypeDefKind::List(Self::list(list)),
             wit_parser::TypeDefKind::FixedLengthList(type_, length) => {
-                TypeDefKind::List((Self::type_(type_), Some(length)))
+                TypeDefKind::List(Self::list_fixed_length(type_, length))
             }
+            wit_parser::TypeDefKind::Map(key, value) => TypeDefKind::Map(Self::map(key, value)),
+
             wit_parser::TypeDefKind::Future(future) => TypeDefKind::Future(future.map(Self::type_)),
             wit_parser::TypeDefKind::Stream(stream) => TypeDefKind::Stream(stream.map(Self::type_)),
             wit_parser::TypeDefKind::Type(type_) => TypeDefKind::Type(Self::type_(type_)),
@@ -276,19 +275,15 @@ impl ExtractedWit {
 
     fn record(record: wit_parser::Record) -> Record {
         Record {
-            fields: Self::fields(record.fields),
-        }
-    }
-
-    fn fields(fields: Vec<wit_parser::Field>) -> Vec<Field> {
-        fields.into_iter().map(Self::field).collect()
-    }
-
-    fn field(field: wit_parser::Field) -> Field {
-        Field {
-            name: field.name,
-            type_: Self::type_(field.ty),
-            docs: Self::docs(field.docs),
+            fields: record
+                .fields
+                .into_iter()
+                .map(|field| RecordField {
+                    name: field.name,
+                    type_: Self::type_(field.ty),
+                    docs: Self::docs(field.docs),
+                })
+                .collect(),
         }
     }
 
@@ -301,18 +296,14 @@ impl ExtractedWit {
 
     fn flags(flags: wit_parser::Flags) -> Flags {
         Flags {
-            flags: Self::flags_(flags.flags),
-        }
-    }
-
-    fn flags_(flags: Vec<wit_parser::Flag>) -> Vec<Flag> {
-        flags.into_iter().map(Self::flag).collect()
-    }
-
-    fn flag(flag: wit_parser::Flag) -> Flag {
-        Flag {
-            name: flag.name,
-            docs: Self::docs(flag.docs),
+            flags: flags
+                .flags
+                .into_iter()
+                .map(|flag| Flag {
+                    name: flag.name,
+                    docs: Self::docs(flag.docs),
+                })
+                .collect(),
         }
     }
 
@@ -324,36 +315,28 @@ impl ExtractedWit {
 
     fn variant(variant: wit_parser::Variant) -> Variant {
         Variant {
-            cases: Self::cases(variant.cases),
-        }
-    }
-
-    fn cases(cases: Vec<wit_parser::Case>) -> Vec<Case> {
-        cases.into_iter().map(Self::case).collect()
-    }
-
-    fn case(case: wit_parser::Case) -> Case {
-        Case {
-            name: case.name,
-            type_: case.ty.map(Self::type_),
-            docs: Self::docs(case.docs),
+            cases: variant
+                .cases
+                .into_iter()
+                .map(|case| VariantCase {
+                    name: case.name,
+                    type_: case.ty.map(Self::type_),
+                    docs: Self::docs(case.docs),
+                })
+                .collect(),
         }
     }
 
     fn enum_(enum_: wit_parser::Enum) -> Enum {
         Enum {
-            cases: Self::enum_cases(enum_.cases),
-        }
-    }
-
-    fn enum_cases(cases: Vec<wit_parser::EnumCase>) -> Vec<EnumCase> {
-        cases.into_iter().map(Self::enum_case).collect()
-    }
-
-    fn enum_case(case: wit_parser::EnumCase) -> EnumCase {
-        EnumCase {
-            name: case.name,
-            docs: Self::docs(case.docs),
+            cases: enum_
+                .cases
+                .into_iter()
+                .map(|case| EnumCase {
+                    name: case.name,
+                    docs: Self::docs(case.docs),
+                })
+                .collect(),
         }
     }
 
@@ -364,23 +347,25 @@ impl ExtractedWit {
         }
     }
 
-    fn type_owner(owner: wit_parser::TypeOwner) -> TypeOwner {
-        match owner {
-            wit_parser::TypeOwner::World(id) => TypeOwner::World(Self::world_id(id)),
-            wit_parser::TypeOwner::Interface(id) => TypeOwner::Interface(Self::interface_id(id)),
-            wit_parser::TypeOwner::None => TypeOwner::None,
+    fn list(type_: wit_parser::Type) -> List {
+        List {
+            type_: Self::type_(type_),
+            fixed_length: None,
         }
     }
 
-    fn packages(resolve: &wit_parser::Resolve) -> BTreeMap<u32, Package> {
-        resolve
-            .packages
-            .clone()
-            .into_iter()
-            .fold(BTreeMap::new(), |mut packages, (id, package)| {
-                packages.insert(Self::package_id(id).package_id, Self::package(package));
-                packages
-            })
+    fn list_fixed_length(type_: wit_parser::Type, fixed_length: u32) -> List {
+        List {
+            type_: Self::type_(type_),
+            fixed_length: Some(fixed_length),
+        }
+    }
+
+    fn map(key: wit_parser::Type, value: wit_parser::Type) -> Map {
+        Map {
+            key: Self::type_(key),
+            value: Self::type_(value),
+        }
     }
 
     fn package_id(id: wit_parser::PackageId) -> PackageId {
@@ -391,7 +376,11 @@ impl ExtractedWit {
 
     fn package(package: wit_parser::Package) -> Package {
         Package {
-            name: Self::package_name(package.name),
+            name: PackageName {
+                namespace: package.name.namespace,
+                name: package.name.name,
+                version: package.name.version.map(Self::version),
+            },
             docs: Self::docs(package.docs),
             interfaces: package
                 .interfaces
@@ -403,43 +392,6 @@ impl ExtractedWit {
                 .into_iter()
                 .map(|(name, id)| (name, Self::world_id(id)))
                 .collect(),
-        }
-    }
-
-    fn package_name(package_name: wit_parser::PackageName) -> PackageName {
-        PackageName {
-            namespace: package_name.namespace,
-            name: package_name.name,
-            version: package_name.version.map(Self::version),
-        }
-    }
-
-    fn function_kind(kind: wit_parser::FunctionKind) -> FunctionKind {
-        match kind {
-            wit_parser::FunctionKind::Freestanding => FunctionKind::Freestanding,
-            wit_parser::FunctionKind::AsyncFreestanding => FunctionKind::AsyncFreestanding,
-            wit_parser::FunctionKind::Method(id) => FunctionKind::Method(Self::type_id(id)),
-            wit_parser::FunctionKind::AsyncMethod(id) => {
-                FunctionKind::AsyncMethod(Self::type_id(id))
-            }
-            wit_parser::FunctionKind::Static(id) => FunctionKind::Static(Self::type_id(id)),
-            wit_parser::FunctionKind::AsyncStatic(id) => {
-                FunctionKind::AsyncStatic(Self::type_id(id))
-            }
-            wit_parser::FunctionKind::Constructor(id) => {
-                FunctionKind::Constructor(Self::type_id(id))
-            }
-        }
-    }
-
-    fn params(params: Vec<wit_parser::Param>) -> Vec<Param> {
-        params.into_iter().map(Self::param).collect()
-    }
-
-    fn param(param: wit_parser::Param) -> Param {
-        Param {
-            name: param.name,
-            type_: Self::type_(param.ty),
         }
     }
 
