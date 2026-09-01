@@ -49,9 +49,7 @@ interface wac-loader {
 interface wit {
   use types.{component, error};
 
-  record type-id {
-    type-id: u32,
-  }
+  type type-id = string;
 
   variant %type {
     %bool,
@@ -209,13 +207,9 @@ interface wit {
     external-id: option<string>,
   }
 
-  record interface-id {
-    interface-id: u32,
-  }
+  type interface-id = string;
 
-  record world-id {
-    world-id: u32,
-  }
+  type world-id = string;
 
   variant type-owner {
     %world(world-id),
@@ -261,9 +255,7 @@ interface wit {
     %interface(interface-id),
   }
 
-  record package-id {
-    package-id: u32,
-  }
+  type package-id = string;
 
   record %interface {
     name: option<string>,
@@ -297,11 +289,11 @@ interface wit {
     worlds: list<tuple<string, world-id>>,
   }
 
-  resource wit {
-    %interface: func(id: interface-id) -> option<%interface>;
-    %package: func(id: package-id) -> option<%package>;
-    %type: func(id: type-id) -> option<type-def>;
-    %world: func(id: world-id) -> option<%world>;
+  record wit {
+    interfaces: map<string, %interface>,
+    packages: map<string, %package>,
+    types: map<string, type-def>,
+    worlds: map<string, %world>,
   }
 
   extract: async func(component: component) -> result<tuple<wit, %package>, error>;

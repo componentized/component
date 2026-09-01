@@ -2,9 +2,7 @@
 interface wit {
     use types.{component, error};
 
-    record type-id {
-        type-id: u32,
-    }
+    type type-id = string;
 
     variant %type {
         %bool,
@@ -177,9 +175,7 @@ interface wit {
         numeric(u64),
     }
 
-    record interface-id {
-        interface-id: u32,
-    }
+    type interface-id = string;
 
     record %interface {
         name: option<string>,
@@ -190,9 +186,7 @@ interface wit {
         %package: option<package-id>,
     }
 
-    record world-id {
-        world-id: u32,
-    }
+    type world-id = string;
 
     record %world {
         name: string,
@@ -233,9 +227,7 @@ interface wit {
         %interface(interface-id),
     }
 
-    record package-id {
-        package-id: u32,
-    }
+    type package-id = string;
 
     record %package {
         name: package-name,
@@ -250,11 +242,11 @@ interface wit {
         version: option<version>,
     }
 
-    resource wit {
-        %interface: func(id: interface-id) -> option<%interface>;
-        %package: func(id: package-id) -> option<%package>;
-        %type: func(id: type-id) -> option<type-def>;
-        %world: func(id: world-id) -> option<%world>;
+    record wit {
+        interfaces: map<string, %interface>,
+        packages: map<string, %package>,
+        types: map<string, type-def>,
+        worlds: map<string, %world>,
     }
 
     extract: async func(component: component) -> result<tuple<wit, %package>, error>;
