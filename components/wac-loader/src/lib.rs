@@ -2,10 +2,11 @@
 
 use wac_graph::{types::Package, CompositionGraph, EncodeOptions};
 
-use crate::exports::componentized::component::{
+use crate::componentized::component::{
     types::{Component, Error},
-    wac_loader::Guest,
+    wit,
 };
+use crate::exports::componentized::component::wac_loader::Guest;
 
 pub(crate) struct WacLoader;
 
@@ -27,9 +28,13 @@ impl Guest for WacLoader {
         wac_graph::plug(&mut graph, graph_plugs, socket)?;
         let composed_wasm = graph.encode(EncodeOptions::default())?;
 
-        Ok(Component {
+        let mut component = Component {
             bytes: composed_wasm,
-        })
+            wit: None,
+        };
+        component.wit = Some(wit::extract(component.clone()).await?);
+
+        Ok(component)
     }
 }
 

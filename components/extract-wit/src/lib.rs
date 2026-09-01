@@ -3,37 +3,34 @@
 use std::collections::BTreeMap;
 
 use crate::{
-    componentized::component::types::{Component, Error},
-    exports::componentized::component::wit::{
-        Docs, Enum, EnumCase, Flag, Flags, Function, FunctionKind, Guest, Handle, IncludeName,
-        Interface, InterfaceId, List, Map, Package, PackageId, PackageName, Param, Record,
-        RecordField, Result as Result_, Stability, Stable, Tuple, Type, TypeDef, TypeDefKind,
-        TypeId, TypeOwner, Unstable, Variant, VariantCase, Version, VersionIdentifier, Wit, World,
-        WorldId, WorldInclude, WorldItem, WorldItemInterface, WorldKey,
+    componentized::component::types::{
+        Component, Docs, Enum, EnumCase, Error, Flag, Flags, Function, FunctionKind, Handle,
+        IncludeName, Interface, InterfaceId, List, Map, Package, PackageId, PackageName, Param,
+        Record, RecordField, Result as Result_, Stability, Stable, Tuple, Type, TypeDef,
+        TypeDefKind, TypeId, TypeOwner, Unstable, Variant, VariantCase, Version, VersionIdentifier,
+        Wit, World, WorldId, WorldInclude, WorldItem, WorldItemInterface, WorldKey,
     },
+    exports::componentized::component::wit::Guest,
 };
 
 pub(crate) struct ExtractWit;
 
 impl Guest for ExtractWit {
     #[allow(async_fn_in_trait)]
-    async fn extract(component: Component) -> Result<(Wit, Package), Error> {
+    async fn extract(component: Component) -> Result<Wit, Error> {
         let wasm = component.bytes;
         let decoded = wit_component::decode(&wasm)?;
 
-        let wit = Wit::new(decoded.resolve());
-        let package = wit
-            .packages
-            .get(&Wit::package_id(decoded.package()))
-            .expect("decoded package must exist");
-
-        Ok((wit.clone(), package.clone()))
+        Wit::new(decoded.resolve(), decoded.package())
     }
 }
 
 impl Wit {
-    fn new(resolve: &wit_parser::Resolve) -> Self {
-        Self {
+    fn new(
+        resolve: &wit_parser::Resolve,
+        package_id: wit_parser::PackageId,
+    ) -> Result<Self, Error> {
+        let wit = Self {
             worlds: resolve.worlds.clone().into_iter().fold(
                 BTreeMap::new(),
                 |mut worlds, (id, world)| {
@@ -62,7 +59,19 @@ impl Wit {
                     packages
                 },
             ),
+
+            default_package: Some(Self::package_id(package_id)),
+        };
+
+        if wit
+            .packages
+            .get(&wit.default_package.clone().unwrap())
+            .is_none()
+        {
+            Err(Error::Other(Some("decoded package must exist".to_string())))?;
         }
+
+        Ok(wit)
     }
 
     fn world_id(id: wit_parser::WorldId) -> WorldId {

@@ -12,7 +12,10 @@ impl Guest for WasmLoader {
     #[allow(async_fn_in_trait)]
     async fn load(wasm: StreamReader<u8>) -> Result<Component, Error> {
         let wasm = wasm.collect().await;
-        Ok(Component { bytes: wasm })
+        Ok(Component {
+            bytes: wasm,
+            wit: None,
+        })
     }
 }
 
