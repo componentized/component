@@ -6,8 +6,8 @@ interface types {
         other(option<string>),
     }
 
-    resource component {
-        into-wasm: func() -> list<u8>;
+    record component {
+        bytes: list<u8>,
     }
 
 }

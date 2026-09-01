@@ -19,8 +19,8 @@ impl Guest for ExtractWit {
     type Wit = ExtractedWit;
 
     #[allow(async_fn_in_trait)]
-    async fn extract(component: &Component) -> Result<(Wit, Package), Error> {
-        let wasm = component.into_wasm();
+    async fn extract(component: Component) -> Result<(Wit, Package), Error> {
+        let wasm = component.bytes;
         let decoded = wit_component::decode(&wasm)?;
 
         let wit = ExtractedWit::new(decoded.resolve());

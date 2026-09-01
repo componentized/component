@@ -31,5 +31,5 @@ interface wasm-directory-loader {
 interface wac-loader {
     use types.{component, error};
 
-    plug: async func(socket: borrow<component>, plugs: list<borrow<component>>) -> result<component, error>;
+    plug: async func(socket: component, plugs: list<component>) -> result<component, error>;
 }

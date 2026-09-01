@@ -5,8 +5,8 @@ interface types {
     other(option<string>),
   }
 
-  resource component {
-    into-wasm: func() -> list<u8>;
+  record component {
+    bytes: list<u8>,
   }
 }
 
@@ -43,7 +43,7 @@ interface wasm-directory-loader {
 interface wac-loader {
   use types.{component, error};
 
-  plug: async func(socket: borrow<component>, plugs: list<borrow<component>>) -> result<component, error>;
+  plug: async func(socket: component, plugs: list<component>) -> result<component, error>;
 }
 
 interface wit {
@@ -304,7 +304,7 @@ interface wit {
     %world: func(id: world-id) -> option<%world>;
   }
 
-  extract: async func(component: borrow<component>) -> result<tuple<wit, %package>, error>;
+  extract: async func(component: component) -> result<tuple<wit, %package>, error>;
 }
 
 world imports {

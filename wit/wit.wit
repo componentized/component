@@ -257,6 +257,5 @@ interface wit {
         %world: func(id: world-id) -> option<%world>;
     }
 
-    extract: async func(component: borrow<component>) -> result<tuple<wit, %package>, error>;
-
+    extract: async func(component: component) -> result<tuple<wit, %package>, error>;
 }
