@@ -2,11 +2,10 @@
 
 use wac_graph::{types::Package, CompositionGraph, EncodeOptions};
 
-use crate::componentized::component::{
+use crate::exports::componentized::component::{
     types::{Component, Error},
-    wit,
+    wac_loader::Guest,
 };
-use crate::exports::componentized::component::wac_loader::Guest;
 
 pub(crate) struct WacLoader;
 
@@ -15,24 +14,18 @@ impl Guest for WacLoader {
     async fn plug(socket: Component, plugs: Vec<Component>) -> Result<Component, Error> {
         let mut graph = CompositionGraph::new();
 
-        let socket = Package::from_bytes("socket", None, socket.bytes, graph.types_mut())?;
+        let socket = Package::from_bytes("socket", None, socket, graph.types_mut())?;
         let socket = graph.register_package(socket)?;
 
         let mut graph_plugs = Vec::new();
         for plug in plugs {
-            let plug = Package::from_bytes("plug", None, plug.bytes, graph.types_mut())?;
+            let plug = Package::from_bytes("plug", None, plug, graph.types_mut())?;
             let plug = graph.register_package(plug)?;
             graph_plugs.push(plug);
         }
 
         wac_graph::plug(&mut graph, graph_plugs, socket)?;
-        let composed_wasm = graph.encode(EncodeOptions::default())?;
-
-        let mut component = Component {
-            bytes: composed_wasm,
-            wit: None,
-        };
-        component.wit = Some(wit::extract(component.clone()).await?);
+        let component = graph.encode(EncodeOptions::default())?;
 
         Ok(component)
     }

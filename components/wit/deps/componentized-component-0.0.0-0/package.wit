@@ -5,6 +5,48 @@ interface types {
     other(option<string>),
   }
 
+  type component = list<u8>;
+}
+
+interface wasm-loader {
+  use types.{component, error};
+
+  load: async func(wasm: stream<u8>) -> result<component, error>;
+}
+
+interface wat-loader {
+  use types.{component, error};
+
+  load: async func(wat: stream<u8>) -> result<component, error>;
+}
+
+interface filesystem-loader {
+  use types.{component, error};
+
+  load: async func(path: string) -> result<component, error>;
+}
+
+interface oci-loader {
+  use types.{component, error};
+
+  load: async func(image: string) -> result<component, error>;
+}
+
+interface wasm-directory-loader {
+  use types.{component, error};
+
+  load: async func(manifest-key: string) -> result<component, error>;
+}
+
+interface wac-loader {
+  use types.{component, error};
+
+  plug: async func(socket: component, plugs: list<component>) -> result<component, error>;
+}
+
+interface wit {
+  use types.{component, error};
+
   type type-id = string;
 
   variant %type {
@@ -252,51 +294,6 @@ interface types {
     worlds: map<string, %world>,
     default-package: option<package-id>,
   }
-
-  record component {
-    bytes: list<u8>,
-    wit: option<wit>,
-  }
-}
-
-interface wasm-loader {
-  use types.{component, error};
-
-  load: async func(wasm: stream<u8>) -> result<component, error>;
-}
-
-interface wat-loader {
-  use types.{component, error};
-
-  load: async func(wat: stream<u8>) -> result<component, error>;
-}
-
-interface filesystem-loader {
-  use types.{component, error};
-
-  load: async func(path: string) -> result<component, error>;
-}
-
-interface oci-loader {
-  use types.{component, error};
-
-  load: async func(image: string) -> result<component, error>;
-}
-
-interface wasm-directory-loader {
-  use types.{component, error};
-
-  load: async func(manifest-key: string) -> result<component, error>;
-}
-
-interface wac-loader {
-  use types.{component, error};
-
-  plug: async func(socket: component, plugs: list<component>) -> result<component, error>;
-}
-
-interface wit {
-  use types.{component, error, wit};
 
   extract: async func(component: component) -> result<wit, error>;
 }

@@ -3,14 +3,14 @@
 use std::collections::BTreeMap;
 
 use crate::{
-    componentized::component::types::{
-        Component, Docs, Enum, EnumCase, Error, Flag, Flags, Function, FunctionKind, Handle,
-        IncludeName, Interface, InterfaceId, List, Map, Package, PackageId, PackageName, Param,
-        Record, RecordField, Result as Result_, Stability, Stable, Tuple, Type, TypeDef,
-        TypeDefKind, TypeId, TypeOwner, Unstable, Variant, VariantCase, Version, VersionIdentifier,
-        Wit, World, WorldId, WorldInclude, WorldItem, WorldItemInterface, WorldKey,
+    componentized::component::types::{Component, Error},
+    exports::componentized::component::wit::{
+        Docs, Enum, EnumCase, Flag, Flags, Function, FunctionKind, Guest, Handle, IncludeName,
+        Interface, InterfaceId, List, Map, Package, PackageId, PackageName, Param, Record,
+        RecordField, Result as Result_, Stability, Stable, Tuple, Type, TypeDef, TypeDefKind,
+        TypeId, TypeOwner, Unstable, Variant, VariantCase, Version, VersionIdentifier, Wit, World,
+        WorldId, WorldInclude, WorldItem, WorldItemInterface, WorldKey,
     },
-    exports::componentized::component::wit::Guest,
 };
 
 pub(crate) struct ExtractWit;
@@ -18,8 +18,7 @@ pub(crate) struct ExtractWit;
 impl Guest for ExtractWit {
     #[allow(async_fn_in_trait)]
     async fn extract(component: Component) -> Result<Wit, Error> {
-        let wasm = component.bytes;
-        let decoded = wit_component::decode(&wasm)?;
+        let decoded = wit_component::decode(&component)?;
 
         Wit::new(decoded.resolve(), decoded.package())
     }
