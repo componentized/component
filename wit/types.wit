@@ -6,8 +6,6 @@ interface types {
         other(option<string>),
     }
 
-    resource component {
-        into-wasm: func() -> list<u8>;
-    }
+    type component = list<u8>;
 
 }

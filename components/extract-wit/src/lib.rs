@@ -5,81 +5,76 @@ use std::collections::BTreeMap;
 use crate::{
     componentized::component::types::{Component, Error},
     exports::componentized::component::wit::{
-        Docs, Enum, EnumCase, Flag, Flags, Function, FunctionKind, Guest, GuestWit, Handle,
-        IncludeName, Interface, InterfaceId, List, Map, Package, PackageId, PackageName, Param,
-        Record, RecordField, Result as Result_, Stability, Stable, Tuple, Type, TypeDef,
-        TypeDefKind, TypeId, TypeOwner, Unstable, Variant, VariantCase, Version, VersionIdentifier,
-        Wit, World, WorldId, WorldInclude, WorldItem, WorldItemInterface, WorldKey,
+        Docs, Enum, EnumCase, Flag, Flags, Function, FunctionKind, Guest, Handle, IncludeName,
+        Interface, InterfaceId, List, Map, Package, PackageId, PackageName, Param, Record,
+        RecordField, Result as Result_, Stability, Stable, Tuple, Type, TypeDef, TypeDefKind,
+        TypeId, TypeOwner, Unstable, Variant, VariantCase, Version, VersionIdentifier, Wit, World,
+        WorldId, WorldInclude, WorldItem, WorldItemInterface, WorldKey,
     },
 };
 
 pub(crate) struct ExtractWit;
 
 impl Guest for ExtractWit {
-    type Wit = ExtractedWit;
-
     #[allow(async_fn_in_trait)]
-    async fn extract(component: &Component) -> Result<(Wit, Package), Error> {
-        let wasm = component.into_wasm();
-        let decoded = wit_component::decode(&wasm)?;
+    async fn extract(component: Component) -> Result<Wit, Error> {
+        let decoded = wit_component::decode(&component)?;
 
-        let wit = ExtractedWit::new(decoded.resolve());
-        let package = wit
-            .package(ExtractedWit::package_id(decoded.package()))
-            .expect("decoded package must exist");
-
-        Ok((Wit::new(wit), package))
+        Wit::new(decoded.resolve(), decoded.package())
     }
 }
 
-pub(crate) struct ExtractedWit {
-    worlds: BTreeMap<u32, World>,
-    interfaces: BTreeMap<u32, Interface>,
-    types: BTreeMap<u32, TypeDef>,
-    packages: BTreeMap<u32, Package>,
-}
-
-impl ExtractedWit {
-    fn new(resolve: &wit_parser::Resolve) -> Self {
-        Self {
+impl Wit {
+    fn new(
+        resolve: &wit_parser::Resolve,
+        package_id: wit_parser::PackageId,
+    ) -> Result<Self, Error> {
+        let wit = Self {
             worlds: resolve.worlds.clone().into_iter().fold(
                 BTreeMap::new(),
                 |mut worlds, (id, world)| {
-                    worlds.insert(Self::world_id(id).world_id, Self::world(world));
+                    worlds.insert(Self::world_id(id), Self::world(world));
                     worlds
                 },
             ),
             interfaces: resolve.interfaces.clone().into_iter().fold(
                 BTreeMap::new(),
                 |mut interfaces, (id, interface)| {
-                    interfaces.insert(
-                        Self::interface_id(id).interface_id,
-                        Self::interface(interface),
-                    );
+                    interfaces.insert(Self::interface_id(id), Self::interface(interface));
                     interfaces
                 },
             ),
             types: resolve.types.clone().into_iter().fold(
                 BTreeMap::new(),
                 |mut types, (id, type_def)| {
-                    types.insert(Self::type_id(id).type_id, Self::type_def(type_def));
+                    types.insert(Self::type_id(id), Self::type_def(type_def));
                     types
                 },
             ),
             packages: resolve.packages.clone().into_iter().fold(
                 BTreeMap::new(),
                 |mut packages, (id, package)| {
-                    packages.insert(Self::package_id(id).package_id, Self::package(package));
+                    packages.insert(Self::package_id(id), Self::package(package));
                     packages
                 },
             ),
+
+            default_package: Some(Self::package_id(package_id)),
+        };
+
+        if wit
+            .packages
+            .get(&wit.default_package.clone().unwrap())
+            .is_none()
+        {
+            Err(Error::Other(Some("decoded package must exist".to_string())))?;
         }
+
+        Ok(wit)
     }
 
     fn world_id(id: wit_parser::WorldId) -> WorldId {
-        WorldId {
-            world_id: u32::try_from(id.index()).expect("id too large"),
-        }
+        WorldId::from(format!("world:{}", id.index()))
     }
 
     fn world(world: wit_parser::World) -> World {
@@ -147,9 +142,7 @@ impl ExtractedWit {
     }
 
     fn interface_id(id: wit_parser::InterfaceId) -> InterfaceId {
-        InterfaceId {
-            interface_id: u32::try_from(id.index()).expect("id too large"),
-        }
+        InterfaceId::from(format!("interface:{}", id.index()))
     }
 
     fn interface(interface: wit_parser::Interface) -> Interface {
@@ -205,9 +198,7 @@ impl ExtractedWit {
     }
 
     fn type_id(id: wit_parser::TypeId) -> TypeId {
-        TypeId {
-            type_id: u32::try_from(id.index()).expect("id too large"),
-        }
+        TypeId::from(format!("type:{}", id.index()))
     }
 
     fn type_(type_: wit_parser::Type) -> Type {
@@ -369,9 +360,7 @@ impl ExtractedWit {
     }
 
     fn package_id(id: wit_parser::PackageId) -> PackageId {
-        PackageId {
-            package_id: u32::try_from(id.index()).expect("id too large"),
-        }
+        PackageId::from(format!("package:{}", id.index()))
     }
 
     fn package(package: wit_parser::Package) -> Package {
@@ -441,28 +430,6 @@ impl ExtractedWit {
                     .collect(),
             ),
         }
-    }
-}
-
-impl GuestWit for ExtractedWit {
-    #[allow(async_fn_in_trait)]
-    fn world(&self, id: WorldId) -> Option<World> {
-        self.worlds.get(&id.world_id).cloned()
-    }
-
-    #[allow(async_fn_in_trait)]
-    fn interface(&self, id: InterfaceId) -> Option<Interface> {
-        self.interfaces.get(&id.interface_id).cloned()
-    }
-
-    #[allow(async_fn_in_trait)]
-    fn type_(&self, id: TypeId) -> Option<TypeDef> {
-        self.types.get(&id.type_id).cloned()
-    }
-
-    #[allow(async_fn_in_trait)]
-    fn package(&self, id: PackageId) -> Option<Package> {
-        self.packages.get(&id.package_id).cloned()
     }
 }
 

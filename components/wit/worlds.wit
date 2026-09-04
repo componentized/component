@@ -5,7 +5,6 @@ world extract-wit {
 }
 
 world wac-loader {
-    import componentized:component/types@0.0.0-0;
     export componentized:component/types@0.0.0-0;
     export componentized:component/wac-loader@0.0.0-0;
 }

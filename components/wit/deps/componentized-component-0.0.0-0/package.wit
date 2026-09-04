@@ -5,9 +5,7 @@ interface types {
     other(option<string>),
   }
 
-  resource component {
-    into-wasm: func() -> list<u8>;
-  }
+  type component = list<u8>;
 }
 
 interface wasm-loader {
@@ -43,15 +41,13 @@ interface wasm-directory-loader {
 interface wac-loader {
   use types.{component, error};
 
-  plug: async func(socket: borrow<component>, plugs: list<borrow<component>>) -> result<component, error>;
+  plug: async func(socket: component, plugs: list<component>) -> result<component, error>;
 }
 
 interface wit {
   use types.{component, error};
 
-  record type-id {
-    type-id: u32,
-  }
+  type type-id = string;
 
   variant %type {
     %bool,
@@ -209,13 +205,9 @@ interface wit {
     external-id: option<string>,
   }
 
-  record interface-id {
-    interface-id: u32,
-  }
+  type interface-id = string;
 
-  record world-id {
-    world-id: u32,
-  }
+  type world-id = string;
 
   variant type-owner {
     %world(world-id),
@@ -261,9 +253,7 @@ interface wit {
     %interface(interface-id),
   }
 
-  record package-id {
-    package-id: u32,
-  }
+  type package-id = string;
 
   record %interface {
     name: option<string>,
@@ -297,14 +287,15 @@ interface wit {
     worlds: list<tuple<string, world-id>>,
   }
 
-  resource wit {
-    %interface: func(id: interface-id) -> option<%interface>;
-    %package: func(id: package-id) -> option<%package>;
-    %type: func(id: type-id) -> option<type-def>;
-    %world: func(id: world-id) -> option<%world>;
+  record wit {
+    interfaces: map<string, %interface>,
+    packages: map<string, %package>,
+    types: map<string, type-def>,
+    worlds: map<string, %world>,
+    default-package: option<package-id>,
   }
 
-  extract: async func(component: borrow<component>) -> result<tuple<wit, %package>, error>;
+  extract: async func(component: component) -> result<wit, error>;
 }
 
 world imports {
