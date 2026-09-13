@@ -20,6 +20,7 @@ Prereqs:
 - a rust toolchain
 - [`wasm-tools`](https://github.com/bytecodealliance/wasm-tools)
 - [`wkg`](https://github.com/bytecodealliance/wasm-pkg-tools)
+- [`yq`](https://github.com/mikefarah/yq)
 
 ```sh
 make components
@@ -28,8 +29,9 @@ make components
 ### Components
 
 - [`extract-wit`](./components/extract-wit/)
+- [`filesystem-loader`](./components/filesystem-loader/)
+- [`http-loader`](./components/http-loader/)
 - [`wac-loader`](./components/wac-loader/)
-- [`wasm-loader`](./components/wasm-loader/)
 
 ## Community
 

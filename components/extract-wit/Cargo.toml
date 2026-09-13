@@ -11,7 +11,6 @@ crate-type = ["cdylib"]
 anyhow = { workspace = true }
 semver = "1"
 wasmparser = { workspace = true }
-wat = { workspace = true }
 wit-bindgen = { workspace = true }
 wit-component = { workspace = true }
 wit-parser = { workspace = true }

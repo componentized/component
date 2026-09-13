@@ -4,12 +4,20 @@ world extract-wit {
     export componentized:component/wit@0.0.0-0;
 }
 
+world filesystem-loader {
+    import wasi:filesystem/types@0.3.0;
+    import wasi:filesystem/preopens@0.3.0;
+    export componentized:component/types@0.0.0-0;
+    export componentized:component/path-loader@0.0.0-0;
+}
+
+world http-loader {
+    import componentized:http/client@0.1.0-dev;
+    export componentized:component/types@0.0.0-0;
+    export componentized:component/path-loader@0.0.0-0;
+}
+
 world wac-loader {
     export componentized:component/types@0.0.0-0;
     export componentized:component/wac-loader@0.0.0-0;
-}
-
-world wasm-loader {
-    export componentized:component/types@0.0.0-0;
-    export componentized:component/wasm-loader@0.0.0-0;
 }

@@ -1,0 +1,15 @@
+cargo-features = ["per-package-target"]
+
+[package]
+name = "filesystem-loader"
+version = "0.1.0"
+edition = "2021"
+license = "Apache-2.0"
+
+default-target = "wasm32-wasip3"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+wit-bindgen = { workspace = true }
