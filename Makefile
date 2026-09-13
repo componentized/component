@@ -2,6 +2,7 @@ SHELL := /bin/bash
 
 export RUST_BACKTRACE ?= 1
 export WASMTIME_BACKTRACE_DETAILS ?= 1
+WKG_CONFIG_FILE ?= $(dir $(abspath $(lastword $(MAKEFILE_LIST)))).config/wasm-pkg/config.toml
 
 COMPONENTS = $(sort $(notdir $(patsubst %/,%,$(dir $(wildcard  components/*/Cargo.toml)))))
 
@@ -27,13 +28,23 @@ define BUILD_COMPONENT
 components/$1: lib/$1.wasm lib/$1.debug.wasm
 
 lib/$1.wasm: Cargo.toml Cargo.lock components/wit/deps $(shell find components/$1 -type f)
-	cargo build -p $1 --target wasm32-unknown-unknown --release
-	wasm-tools component new target/wasm32-unknown-unknown/release/$(subst -,_,$1).wasm -o lib/$1.wasm
+	@$(eval target := $(shell yq -r '.package.default-target // "wasm32-unknown-unknown"' components/$1/Cargo.toml))
+	cargo build -p $1 --target $(target) --release
+ifeq ($(target),wasm32-unknown-unknown)
+	wasm-tools component new target/$(target)/release/$(subst -,_,$1).wasm -o lib/$1.wasm
+else
+	cp target/$(target)/release/$(subst -,_,$1).wasm lib/$1.wasm
+endif
 	cp components/$1/README.md lib/$1.wasm.md
 
 lib/$1.debug.wasm: Cargo.toml Cargo.lock components/wit/deps $(shell find components/$1 -type f)
-	cargo build -p $1 --target wasm32-unknown-unknown
-	wasm-tools component new target/wasm32-unknown-unknown/debug/$(subst -,_,$1).wasm -o lib/$1.debug.wasm
+	@$(eval target := $(shell yq -r '.package.default-target // "wasm32-unknown-unknown"' components/$1/Cargo.toml))
+	cargo build --target $(target) -p $1
+ifeq ($(target),wasm32-unknown-unknown)
+	wasm-tools component new target/$(target)/debug/$(subst -,_,$1).wasm -o lib/$1.debug.wasm
+else
+	cp target/$(target)/debug/$(subst -,_,$1).wasm lib/$1.debug.wasm
+endif
 	cp components/$1/README.md lib/$1.debug.wasm.md
 
 endef
@@ -47,11 +58,11 @@ lib/interface.wasm: wit/deps README.md
 .PHONY: wit
 wit: wit/deps components/wit/deps
 
-wit/deps: wkg.toml $(shell find wit -type f -name "*.wit" -not -path "deps")
-	wkg fetch
+wit/deps: wkg.toml $(WKG_CONFIG_FILE) $(shell find wit -type f -name "*.wit" -not -path "deps")
+	wkg fetch --config $(WKG_CONFIG_FILE)
 
-components/wit/deps: wit/deps components/wkg.toml $(shell find components/wit -type f -name "*.wit" -not -path "deps")
-	( cd components && wkg fetch )
+components/wit/deps: wit/deps components/wkg.toml $(WKG_CONFIG_FILE) $(shell find components/wit -type f -name "*.wit" -not -path "deps")
+	( cd components && wkg fetch --config $(WKG_CONFIG_FILE) )
 
 .PHONY: publish
 publish: $(shell find lib -type f -name "*.wasm" | sed -e 's:^lib/:publish-:g')

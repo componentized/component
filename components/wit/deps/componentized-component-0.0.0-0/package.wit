@@ -8,34 +8,10 @@ interface types {
   type component = list<u8>;
 }
 
-interface wasm-loader {
-  use types.{component, error};
-
-  load: async func(wasm: stream<u8>) -> result<component, error>;
-}
-
-interface wat-loader {
-  use types.{component, error};
-
-  load: async func(wat: stream<u8>) -> result<component, error>;
-}
-
-interface filesystem-loader {
+interface path-loader {
   use types.{component, error};
 
   load: async func(path: string) -> result<component, error>;
-}
-
-interface oci-loader {
-  use types.{component, error};
-
-  load: async func(image: string) -> result<component, error>;
-}
-
-interface wasm-directory-loader {
-  use types.{component, error};
-
-  load: async func(manifest-key: string) -> result<component, error>;
 }
 
 interface wac-loader {
@@ -300,11 +276,7 @@ interface wit {
 
 world imports {
   import types;
-  import wasm-loader;
-  import wat-loader;
-  import filesystem-loader;
-  import oci-loader;
-  import wasm-directory-loader;
+  import path-loader;
   import wac-loader;
   import wit;
 }
