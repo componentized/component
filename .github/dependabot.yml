@@ -9,6 +9,10 @@ updates:
     schedule:
       interval: daily
     groups:
+      wac:
+        patterns:
+          - wac-graph
+          - wac-parser
       wasm-tools:
         patterns:
           - wasmparser
