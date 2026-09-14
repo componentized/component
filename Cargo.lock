@@ -635,10 +635,29 @@ dependencies = [
  "petgraph",
  "semver",
  "thiserror",
- "wac-types",
+ "wac-types 0.10.1",
  "wasm-encoder 0.247.0",
  "wasm-metadata 0.247.0",
  "wasmparser 0.247.0",
+]
+
+[[package]]
+name = "wac-graph"
+version = "0.11.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0bf6c75ac6a3c0351b04ee506e6c39b5b01b4204364264b034e23f8df7cc9946"
+dependencies = [
+ "anyhow",
+ "id-arena",
+ "indexmap",
+ "log",
+ "petgraph",
+ "semver",
+ "thiserror",
+ "wac-types 0.11.0",
+ "wasm-encoder 0.258.0",
+ "wasm-metadata 0.258.0",
+ "wasmparser 0.258.0",
 ]
 
 [[package]]
@@ -647,7 +666,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "indexmap",
- "wac-graph",
+ "wac-graph 0.11.0",
  "wac-parser",
  "wit-bindgen",
 ]
@@ -667,7 +686,7 @@ dependencies = [
  "semver",
  "serde",
  "thiserror",
- "wac-graph",
+ "wac-graph 0.10.1",
  "wasm-encoder 0.247.0",
  "wasm-metadata 0.247.0",
  "wasmparser 0.247.0",
@@ -685,6 +704,20 @@ dependencies = [
  "semver",
  "wasm-encoder 0.247.0",
  "wasmparser 0.247.0",
+]
+
+[[package]]
+name = "wac-types"
+version = "0.11.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "fc44aa9e8f525d1f0c9800a4c082c33b4ac0781a84e83465923afdaf4a25755b"
+dependencies = [
+ "anyhow",
+ "id-arena",
+ "indexmap",
+ "semver",
+ "wasm-encoder 0.258.0",
+ "wasmparser 0.258.0",
 ]
 
 [[package]]
@@ -743,7 +776,14 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "18a11585adb92fe9b55ad1d760e8d8fb5d87e0d2e303cb8eed57f078d54293a2"
 dependencies = [
  "anyhow",
+ "auditable-serde",
+ "flate2",
  "indexmap",
+ "serde",
+ "serde_derive",
+ "serde_json",
+ "spdx",
+ "url",
  "wasm-encoder 0.258.0",
  "wasmparser 0.258.0",
 ]
