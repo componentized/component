@@ -9,7 +9,7 @@ use crate::{
         Interface, InterfaceId, List, Map, Package, PackageId, PackageName, Param, Record,
         RecordField, Result as Result_, Stability, Stable, Tuple, Type, TypeDef, TypeDefKind,
         TypeId, TypeOwner, Unstable, Variant, VariantCase, Version, VersionIdentifier, Wit, World,
-        WorldId, WorldInclude, WorldItem, WorldItemInterface, WorldKey,
+        WorldId, WorldInclude, WorldItem, WorldItemInterface, WorldKey, WorldSummary,
     },
 };
 
@@ -20,7 +20,45 @@ impl Guest for ExtractWit {
     async fn extract(component: Component) -> Result<Wit, Error> {
         let decoded = wit_component::decode(&component)?;
 
-        Wit::new(decoded.resolve(), decoded.package())
+        let component_world_id = match &decoded {
+            wit_component::DecodedWasm::Component(_, world_id) => Some(*world_id),
+            wit_component::DecodedWasm::WitPackage(..) => None,
+        };
+
+        Wit::new(decoded.resolve(), decoded.package(), component_world_id)
+    }
+
+    #[allow(async_fn_in_trait)]
+    async fn summarize_world(component: Component) -> Result<WorldSummary, Error> {
+        let wit = Self::extract(component).await?;
+        let world = wit
+            .worlds
+            .get(&wit.component_world.expect("must be a component"))
+            .expect("component world must exist");
+
+        let extract_name = |key: &WorldKey| match key {
+            WorldKey::Name(name) => name.clone(),
+            WorldKey::Interface(interface_id) => wit
+                .interfaces
+                .get(interface_id)
+                .unwrap()
+                .name
+                .clone()
+                .unwrap_or("--unknown--".to_owned()),
+        };
+
+        Ok(WorldSummary {
+            imports: world
+                .imports
+                .iter()
+                .map(|(key, _)| extract_name(key))
+                .collect(),
+            exports: world
+                .exports
+                .iter()
+                .map(|(key, _)| extract_name(key))
+                .collect(),
+        })
     }
 }
 
@@ -28,6 +66,7 @@ impl Wit {
     fn new(
         resolve: &wit_parser::Resolve,
         package_id: wit_parser::PackageId,
+        component_world_id: Option<wit_parser::WorldId>,
     ) -> Result<Self, Error> {
         let wit = Self {
             worlds: resolve.worlds.clone().into_iter().fold(
@@ -59,15 +98,19 @@ impl Wit {
                 },
             ),
 
-            default_package: Some(Self::package_id(package_id)),
+            default_package: Self::package_id(package_id),
+            component_world: component_world_id.map(Self::world_id),
         };
 
-        if wit
-            .packages
-            .get(&wit.default_package.clone().unwrap())
-            .is_none()
-        {
+        if wit.packages.get(&wit.default_package.clone()).is_none() {
             Err(Error::Other(Some("decoded package must exist".to_string())))?;
+        }
+        if let Some(world_id) = wit.component_world.clone() {
+            if wit.worlds.get(&world_id).is_none() {
+                Err(Error::Other(Some(
+                    "component world must exist if set".to_string(),
+                )))?;
+            }
         }
 
         Ok(wit)

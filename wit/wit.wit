@@ -248,8 +248,15 @@ interface wit {
         types: map<string, type-def>,
         worlds: map<string, %world>,
 
-        default-package: option<package-id>,
+        default-package: package-id,
+        component-world: option<world-id>,
+    }
+
+    record world-summary {
+        imports: list<string>,
+        exports: list<string>,
     }
 
     extract: async func(component: component) -> result<wit, error>;
+    summarize-world: async func(component: component) -> result<world-summary, error>;
 }
