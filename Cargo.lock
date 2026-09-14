@@ -76,10 +76,10 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "semver",
- "wasmparser 0.258.0",
+ "wasmparser 0.259.0",
  "wit-bindgen",
- "wit-component 0.258.0",
- "wit-parser 0.258.0",
+ "wit-component",
+ "wit-parser",
 ]
 
 [[package]]
@@ -763,6 +763,7 @@ dependencies = [
  "hashbrown",
  "indexmap",
  "semver",
+ "serde",
 ]
 
 [[package]]
@@ -783,7 +784,7 @@ checksum = "72ad22a37ecbc0e1fdca34d2b670ba41368cb0920735643e00fdf39a16ee5431"
 dependencies = [
  "anyhow",
  "heck",
- "wit-parser 0.259.0",
+ "wit-parser",
 ]
 
 [[package]]
@@ -799,7 +800,7 @@ dependencies = [
  "syn 3.0.5",
  "wasm-metadata 0.259.0",
  "wit-bindgen-core",
- "wit-component 0.259.0",
+ "wit-component",
 ]
 
 [[package]]
@@ -820,25 +821,6 @@ dependencies = [
 
 [[package]]
 name = "wit-component"
-version = "0.258.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "481b5c47b2ecce0389b5e08a05557d6a190c9cd761773b8880a8017ee04dc7ef"
-dependencies = [
- "anyhow",
- "bitflags",
- "indexmap",
- "log",
- "serde",
- "serde_derive",
- "serde_json",
- "wasm-encoder 0.258.0",
- "wasm-metadata 0.258.0",
- "wasmparser 0.258.0",
- "wit-parser 0.258.0",
-]
-
-[[package]]
-name = "wit-component"
 version = "0.259.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "092f783dee3253265fcde131475055f8c275ac0176a9c0396db1dc7b5544bfb4"
@@ -853,26 +835,7 @@ dependencies = [
  "wasm-encoder 0.259.0",
  "wasm-metadata 0.259.0",
  "wasmparser 0.259.0",
- "wit-parser 0.259.0",
-]
-
-[[package]]
-name = "wit-parser"
-version = "0.258.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ff4daaa3cd97ae49ecd0a99dc009d453f93e0f083dd3be38c0f24a83a93e37ac"
-dependencies = [
- "anyhow",
- "hashbrown",
- "id-arena",
- "indexmap",
- "log",
- "semver",
- "serde",
- "serde_derive",
- "serde_json",
- "unicode-ident",
- "wasmparser 0.258.0",
+ "wit-parser",
 ]
 
 [[package]]
