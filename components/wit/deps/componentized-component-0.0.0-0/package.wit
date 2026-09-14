@@ -17,7 +17,17 @@ interface path-loader {
 interface wac-loader {
   use types.{component, error};
 
+  type %package = string;
+
+  type dependency = tuple<%package, component>;
+
+  variant plan {
+    wac(string),
+  }
+
   plug: async func(socket: component, plugs: list<component>) -> result<component, error>;
+
+  compose: async func(plan: plan, dependencies: list<dependency>) -> result<component, error>;
 }
 
 interface wit {

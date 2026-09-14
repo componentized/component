@@ -9,5 +9,7 @@ crate-type = ["cdylib"]
 
 [dependencies]
 anyhow = { workspace = true }
+indexmap = "2.14.0"
 wac-graph = "0.10.0"
+wac-parser = "0.10.0"
 wit-bindgen = { workspace = true }
