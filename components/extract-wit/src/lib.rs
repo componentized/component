@@ -1,6 +1,6 @@
 #![no_main]
 
-use std::collections::BTreeMap;
+use std::{collections::BTreeMap, fmt::Display};
 
 use crate::{
     componentized::component::types::{Component, Error},
@@ -36,27 +36,44 @@ impl Guest for ExtractWit {
             .get(&wit.component_world.expect("must be a component"))
             .expect("component world must exist");
 
-        let extract_name = |key: &WorldKey| match key {
-            WorldKey::Name(name) => name.clone(),
-            WorldKey::Interface(interface_id) => wit
-                .interfaces
-                .get(interface_id)
-                .unwrap()
-                .name
-                .clone()
-                .unwrap_or("--unknown--".to_owned()),
+        let extract_name = |key: &WorldKey, item: &WorldItem| match key {
+            WorldKey::Name(name) => match item {
+                WorldItem::Interface(iface) => {
+                    iface.external_id.clone().unwrap_or(name.to_string())
+                }
+                WorldItem::Function(..) => "--unknown--".to_owned(),
+                WorldItem::Type { .. } => "--unknown--".to_owned(),
+            },
+            WorldKey::Interface(interface_id) => {
+                let iface = wit.interfaces.get(interface_id).unwrap();
+                match (iface.name.clone(), iface.package.clone()) {
+                    (Some(name), Some(package_id)) => {
+                        let package = wit.packages.get(&package_id).unwrap();
+                        let namespace = package.name.namespace.clone();
+                        let package_name = package.name.name.clone();
+                        let version = package
+                            .name
+                            .version
+                            .clone()
+                            .map(|v| format!("@{v}"))
+                            .unwrap_or("".to_owned());
+                        format!("{namespace}:{package_name}/{name}{version}")
+                    }
+                    _ => "--unknown--".to_owned(),
+                }
+            }
         };
 
         Ok(WorldSummary {
             imports: world
                 .imports
                 .iter()
-                .map(|(key, _)| extract_name(key))
+                .map(|(key, item)| extract_name(key, item))
                 .collect(),
             exports: world
                 .exports
                 .iter()
-                .map(|(key, _)| extract_name(key))
+                .map(|(key, item)| extract_name(key, item))
                 .collect(),
         })
     }
@@ -479,6 +496,52 @@ impl Wit {
 impl From<anyhow::Error> for Error {
     fn from(value: anyhow::Error) -> Self {
         Self::Other(Some(value.to_string()))
+    }
+}
+
+impl Display for Version {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let Version {
+            major,
+            minor,
+            patch,
+            prerelease,
+            build_metadata,
+        } = self;
+        let prerelease = prerelease
+            .clone()
+            .map(|chunks| {
+                chunks
+                    .into_iter()
+                    .map(|chunk| chunk.to_string())
+                    .collect::<Vec<String>>()
+                    .join(".")
+            })
+            .map(|s| format!("-{s}"))
+            .unwrap_or("".to_string());
+        let build_metadata = build_metadata
+            .clone()
+            .map(|chunks| {
+                chunks
+                    .into_iter()
+                    .map(|chunk| chunk.to_string())
+                    .collect::<Vec<String>>()
+                    .join(".")
+            })
+            .map(|s| format!("+{s}"))
+            .unwrap_or("".to_string());
+        f.write_fmt(format_args!(
+            "{major}.{minor}.{patch}{prerelease}{build_metadata}"
+        ))
+    }
+}
+
+impl Display for VersionIdentifier {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            VersionIdentifier::String(vi) => f.write_fmt(format_args!("{vi}")),
+            VersionIdentifier::Numeric(vi) => f.write_fmt(format_args!("{vi}")),
+        }
     }
 }
 
