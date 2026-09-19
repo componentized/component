@@ -23,8 +23,8 @@ impl Guest for WacLoader {
         let socket = graph.register_package(socket)?;
 
         let mut graph_plugs = Vec::new();
-        for plug in plugs {
-            let plug = Package::from_bytes("plug", None, plug, graph.types_mut())?;
+        for (i, plug) in plugs.into_iter().enumerate() {
+            let plug = Package::from_bytes(&format!("plug:{i}"), None, plug, graph.types_mut())?;
             let plug = graph.register_package(plug)?;
             graph_plugs.push(plug);
         }
