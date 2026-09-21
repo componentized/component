@@ -1,4 +1,4 @@
-package componentized:component@0.0.0-0;
+package componentized:component@0.0.0-dev;
 
 interface types {
   variant error {
