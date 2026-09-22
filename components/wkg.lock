@@ -12,6 +12,15 @@ version = "0.1.0-dev"
 digest = "sha256:1c43656521dfd238a67af2288f7abcf67e2ebd950352a90c396dcf11b25c4440"
 
 [[packages]]
+name = "componentized:oci"
+registry = "componentized.dev"
+
+[[packages.versions]]
+requirement = "=0.0.0-dev"
+version = "0.0.0-dev"
+digest = "sha256:6f30d69218537da0ea518d1176e6c8a340746a2472975e9460959859e118abf6"
+
+[[packages]]
 name = "wasi:filesystem"
 registry = "wasi.dev"
 

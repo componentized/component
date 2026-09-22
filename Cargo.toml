@@ -4,6 +4,7 @@ members = [
     "components/*",
 ]
 exclude = [
+    "components/path-loader",
     "components/wit",
 ]
 
