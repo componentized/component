@@ -4,6 +4,9 @@ members = [
     "components/extract-wit",
     "components/filesystem-loader",
     "components/http-loader",
+    "components/oci-loader",
+    "components/path-loader-router",
+    "components/test-loader-harness",
     "components/wac-loader",
 ]
 

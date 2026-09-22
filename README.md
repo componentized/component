@@ -33,6 +33,9 @@ The cli tools the build uses, [`wasm-tools`](https://github.com/bytecodealliance
 - [`extract-wit`](./components/extract-wit/)
 - [`filesystem-loader`](./components/filesystem-loader/)
 - [`http-loader`](./components/http-loader/)
+- [`oci-loader`](./components/oci-loader/)
+- [`path-loader`](./components/path-loader/)
+- [`path-loader-router`](./components/path-loader-router/)
 - [`wac-loader`](./components/wac-loader/)
 
 ## Community
