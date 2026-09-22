@@ -23,7 +23,7 @@ jobs:
         run: cargo binstall --force static-config
       - name: Install wac-cli
         # hack to add map support to wac, remove once this PR lands
-        run: cargo install --git https://github.com/salmans/wac --branch map-defined-type wac-cli
+        run: cargo +stable install --force --git https://github.com/salmans/wac --branch map-defined-type wac-cli
         # run: cargo binstall --force wac-cli
       - name: Install wkg
         run: cargo binstall --force wkg
