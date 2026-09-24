@@ -17,3 +17,27 @@ interface system-clock {
   get-resolution: func() -> duration;
 }
 
+interface monotonic-clock {
+  use types.{duration};
+
+  type mark = u64;
+
+  now: func() -> mark;
+
+  get-resolution: func() -> duration;
+
+  wait-until: async func(when: mark);
+
+  wait-for: async func(how-long: duration);
+}
+
+interface timezone {
+  use system-clock.{instant};
+
+  iana-id: func() -> option<string>;
+
+  utc-offset: func(when: instant) -> option<s64>;
+
+  to-debug-string: func() -> string;
+}
+

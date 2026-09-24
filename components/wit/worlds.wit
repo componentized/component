@@ -17,7 +17,39 @@ world http-loader {
     export componentized:component/path-loader@0.0.0-dev;
 }
 
+world oci-loader {
+    import componentized:oci/client@0.0.0-dev;
+    export componentized:component/types@0.0.0-dev;
+    export componentized:component/path-loader@0.0.0-dev;
+}
+
+world path-loader {
+    import filesystem-loader: interface {
+        use componentized:component/types@0.0.0-dev.{component, error};
+        load: async func(path: string) -> result<component, error>;
+    }
+    import http-loader: interface {
+        use componentized:component/types@0.0.0-dev.{component, error};
+        load: async func(path: string) -> result<component, error>;
+    }
+    import oci-loader: interface {
+        use componentized:component/types@0.0.0-dev.{component, error};
+        load: async func(path: string) -> result<component, error>;
+    }
+
+    export componentized:component/types@0.0.0-dev;
+    export componentized:component/path-loader@0.0.0-dev;
+}
+
 world wac-loader {
     export componentized:component/types@0.0.0-dev;
     export componentized:component/wac-loader@0.0.0-dev;
+}
+
+world test-loader-harness {
+    import componentized:component/path-loader@0.0.0-dev;
+    import wasi:cli/environment@0.3.0;
+    import wasi:cli/stdout@0.3.0;
+    import wasi:cli/stderr@0.3.0;
+    export wasi:cli/run@0.3.0;
 }

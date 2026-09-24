@@ -18,9 +18,11 @@ A [dev container](https://containers.dev) is available that contains the necessa
 
 Prereqs:
 - a rust toolchain
+- [`jq`](https://jqlang.org)
+- [`static-config`](https://github.com/componentized/static-config)
+- [`wac`](https://github.com/bytecodealliance/wac)
 - [`wasm-tools`](https://github.com/bytecodealliance/wasm-tools)
 - [`wkg`](https://github.com/bytecodealliance/wasm-pkg-tools)
-- [`yq`](https://github.com/mikefarah/yq)
 
 ```sh
 make components
@@ -31,6 +33,9 @@ make components
 - [`extract-wit`](./components/extract-wit/)
 - [`filesystem-loader`](./components/filesystem-loader/)
 - [`http-loader`](./components/http-loader/)
+- [`oci-loader`](./components/oci-loader/)
+- [`path-loader`](./components/path-loader/)
+- [`path-loader-router`](./components/path-loader-router/)
 - [`wac-loader`](./components/wac-loader/)
 
 ## Community
