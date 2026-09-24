@@ -36,10 +36,13 @@ impl Guest for OCILoader {
         }
 
         let config_reference = manifest_reference.with_digest(&manifest.config.digest);
-        let config = match oci::get_config(config_reference).await? {
-            oci::Config::WasmV0(wasm_config_v0) => wasm_config_v0,
-            _ => Err(Error::Other(Some("unexpected config".to_string())))?,
-        };
+        let config =
+            match oci::get_config(config_reference, Some(manifest.config.media_type.clone()))
+                .await?
+            {
+                oci::Config::WasmV0(wasm_config_v0) => wasm_config_v0,
+                _ => Err(Error::Other(Some("unexpected config".to_string())))?,
+            };
         if config.component.is_none() {
             Err(Error::Other(Some("not a component".to_string())))?
         }

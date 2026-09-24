@@ -18,7 +18,16 @@ registry = "componentized.dev"
 [[packages.versions]]
 requirement = "=0.0.0-dev"
 version = "0.0.0-dev"
-digest = "sha256:6f30d69218537da0ea518d1176e6c8a340746a2472975e9460959859e118abf6"
+digest = "sha256:fe33e6ac5f37a1a5f37b249c382b28e5224d4f2b28a7b6f8499a8bb11762e400"
+
+[[packages]]
+name = "wasi:cli"
+registry = "wasi.dev"
+
+[[packages.versions]]
+requirement = "=0.3.0"
+version = "0.3.0"
+digest = "sha256:3a2d58743b67a057f7210b9a73d3b21b34ec7895ffe34d1cb092927307156e40"
 
 [[packages]]
 name = "wasi:filesystem"

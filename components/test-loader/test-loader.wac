@@ -1,0 +1,17 @@
+package componentized:component;
+
+let http-client = new local:dep-componentized-http-client { ... };
+
+let oci-client = new local:dep-componentized-oci-client {
+    client: http-client.client,
+    ...
+};
+
+export new local:test-loader-harness {
+    path-loader: new local:path-loader {
+        "componentized:http/client@0.1.0-dev": http-client.client,
+        "componentized:oci/client@0.0.0-dev": oci-client.client,
+        ...
+    }.path-loader,
+    ...
+}...;

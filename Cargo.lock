@@ -573,6 +573,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "test-loader-harness"
+version = "0.1.0"
+dependencies = [
+ "wit-bindgen",
+]
+
+[[package]]
 name = "thiserror"
 version = "1.0.69"
 source = "registry+https://github.com/rust-lang/crates.io-index"

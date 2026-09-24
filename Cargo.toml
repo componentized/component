@@ -1,11 +1,7 @@
 [workspace]
 resolver = "2"
 members = [
-    "components/*",
-]
-exclude = [
-    "components/path-loader",
-    "components/wit",
+    "components/*/src/..",
 ]
 
 [workspace.dependencies]

@@ -11,4 +11,4 @@ Based on the path prefix the request is routed to an appropriate loader:
 - `file:///` -> filesystem-loader: scheme is dropped, last '/' is preserved with path 
 - `file://` -> invalid, other hosts are not supported
 - `file:` -> filesystem-loader: scheme is dropped
-- `oci:` -> oci-loader: scheme is dropped
+- `oci://` -> oci-loader: scheme is dropped

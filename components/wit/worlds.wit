@@ -45,3 +45,11 @@ world wac-loader {
     export componentized:component/types@0.0.0-dev;
     export componentized:component/wac-loader@0.0.0-dev;
 }
+
+world test-loader-harness {
+    import componentized:component/path-loader@0.0.0-dev;
+    import wasi:cli/environment@0.3.0;
+    import wasi:cli/stdout@0.3.0;
+    import wasi:cli/stderr@0.3.0;
+    export wasi:cli/run@0.3.0;
+}

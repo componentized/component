@@ -7,7 +7,8 @@ WKG_CONFIG_FILE ?= $(dir $(abspath $(lastword $(MAKEFILE_LIST)))).config/wasm-pk
 CARGO_COMPONENTS = $(sort $(notdir $(patsubst %/,%,$(dir $(wildcard  components/*/Cargo.toml)))))
 CONFIG_COMPONENTS = $(sort $(notdir $(patsubst %/,%,$(dir $(wildcard  components/*/*.properties)))))
 WAC_COMPONENTS = $(sort $(notdir $(patsubst %/,%,$(dir $(wildcard  components/*/*.wac)))))
-COMPONENTS = $(CARGO_COMPONENTS) $(CONFIG_COMPONENTS) $(WAC_COMPONENTS)
+WKG_COMPONENTS = $(sort $(notdir $(patsubst %/,%,$(dir $(wildcard  components/*/*.wkg)))))
+COMPONENTS = $(sort $(CARGO_COMPONENTS) $(CONFIG_COMPONENTS) $(WAC_COMPONENTS) $(WKG_COMPONENTS))
 
 .PHONY: all
 all: components
@@ -33,23 +34,13 @@ components/$1: lib/$1.wasm lib/$1.debug.wasm
 ifneq ($(wildcard components/$1/Cargo.toml),)
 
 lib/$1.wasm: Cargo.toml Cargo.lock components/wit/deps $(shell find components/$1 -type f)
-	@$(eval target := $(shell yq -r '.package.default-target // "wasm32-unknown-unknown"' components/$1/Cargo.toml 2> /dev/null))
-	cargo build -p $1 --target $(target) --release
-ifeq ($(target),wasm32-unknown-unknown)
-	wasm-tools component new target/$(target)/release/$(subst -,_,$1).wasm -o lib/$1.wasm
-else
-	cp target/$(target)/release/$(subst -,_,$1).wasm lib/$1.wasm
-endif
+	cargo build -p $1 --target wasm32-unknown-unknown --release
+	wasm-tools component new target/wasm32-unknown-unknown/release/$(subst -,_,$1).wasm -o lib/$1.wasm
 	cp components/$1/README.md lib/$1.wasm.md
 
 lib/$1.debug.wasm: Cargo.toml Cargo.lock components/wit/deps $(shell find components/$1 -type f)
-	@$(eval target := $(shell yq -r '.package.default-target // "wasm32-unknown-unknown"' components/$1/Cargo.toml 2> /dev/null))
-	cargo build --target $(target) -p $1
-ifeq ($(target),wasm32-unknown-unknown)
-	wasm-tools component new target/$(target)/debug/$(subst -,_,$1).wasm -o lib/$1.debug.wasm
-else
-	cp target/$(target)/debug/$(subst -,_,$1).wasm lib/$1.debug.wasm
-endif
+	cargo build --target wasm32-unknown-unknown -p $1
+	wasm-tools component new target/wasm32-unknown-unknown/debug/$(subst -,_,$1).wasm -o lib/$1.debug.wasm
 	cp components/$1/README.md lib/$1.debug.wasm.md
 
 else ifneq ($(wildcard components/$1/$1.properties),)
@@ -64,12 +55,24 @@ lib/$1.debug.wasm: components/$1/$1.properties components/$1/README.md
 
 else ifneq ($(wildcard components/$1/$1.wac),)
 
-lib/$1.wasm: components/$1/$1.wac components/$1/README.md $(foreach component,$(CARGO_COMPONENTS),lib/$(component).wasm) $(foreach component,$(CONFIG_COMPONENTS),lib/$(component).wasm)
-	wac compose $(foreach component,$(COMPONENTS),-d local:$(component)=lib/$(component).wasm) -o lib/$1.wasm components/$1/$1.wac
+WAC_DEPS_$1 := $(shell wac parse components/$1/$1.wac 2> /dev/null | jq -r '[.. | .package?.name? | strings | select(startswith("local:")) | sub("^local:"; "")] | unique[]')
+
+lib/$1.wasm: components/$1/$1.wac components/$1/README.md $$(foreach component,$$(WAC_DEPS_$1),lib/$$(component).wasm)
+	wac compose $$(foreach component,$$(WAC_DEPS_$1),-d local:$$(component)=lib/$$(component).wasm) -o lib/$1.wasm components/$1/$1.wac
 	cp components/$1/README.md lib/$1.wasm.md
 
-lib/$1.debug.wasm: components/$1/$1.wac components/$1/README.md $(foreach component,$(CARGO_COMPONENTS),lib/$(component).debug.wasm) $(foreach component,$(CONFIG_COMPONENTS),lib/$(component).debug.wasm)
-	wac compose $(foreach component,$(COMPONENTS),-d local:$(component)=lib/$(component).debug.wasm) -o lib/$1.debug.wasm components/$1/$1.wac
+lib/$1.debug.wasm: components/$1/$1.wac components/$1/README.md $$(foreach component,$$(WAC_DEPS_$1),lib/$$(component).debug.wasm)
+	wac compose $$(foreach component,$$(WAC_DEPS_$1),-d local:$$(component)=lib/$$(component).debug.wasm) -o lib/$1.debug.wasm components/$1/$1.wac
+	cp components/$1/README.md lib/$1.debug.wasm.md
+
+else ifneq ($(wildcard components/$1/$1.wkg),)
+
+lib/$1.wasm: components/$1/$1.wkg components/$1/README.md
+	wkg oci pull $(shell cat components/$1/$1.wkg 2> /dev/null | head -1) -o lib/$1.wasm
+	cp components/$1/README.md lib/$1.wasm.md
+
+lib/$1.debug.wasm: components/$1/$1.wkg components/$1/README.md
+	wkg oci pull $(shell cat components/$1/$1.wkg  2> /dev/null | tail -1 2> /dev/null) -o lib/$1.debug.wasm
 	cp components/$1/README.md lib/$1.debug.wasm.md
 
 endif
@@ -92,7 +95,7 @@ components/wit/deps: wit/deps components/wkg.toml $(WKG_CONFIG_FILE) $(shell fin
 	( cd components && wkg fetch --config $(WKG_CONFIG_FILE) )
 
 .PHONY: publish ## Publish each component in the lib directory
-publish: $(shell find lib -maxdepth 1 -type f -name "*.wasm" | sed -e 's:^lib/:publish-:g')
+publish: $(shell find lib -maxdepth 1 -type f -name "*.wasm" ! -name "dep-*" ! -name "test-*" | sed -e 's:^lib/:publish-:g')
 
 .PHONY: publish-%
 publish-%:
