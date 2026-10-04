@@ -1,5 +1,3 @@
-#![no_main]
-
 use std::{fs, io};
 
 use crate::{

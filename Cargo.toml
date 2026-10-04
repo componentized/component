@@ -1,10 +1,10 @@
 [workspace]
 resolver = "2"
 members = [
-    "components/*",
-]
-exclude = [
-    "components/wit",
+    "components/extract-wit",
+    "components/filesystem-loader",
+    "components/http-loader",
+    "components/wac-loader",
 ]
 
 [workspace.dependencies]
