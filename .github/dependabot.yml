@@ -19,6 +19,10 @@ updates:
           - wat
           - wit-component
           - wit-parser
+  - package-ecosystem: cargo
+    directory: "/tools"
+    schedule:
+      interval: daily
   - package-ecosystem: rust-toolchain
     directory: "/"
     schedule:

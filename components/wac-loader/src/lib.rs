@@ -1,9 +1,7 @@
-#![no_main]
-
 use indexmap::IndexMap;
 use wac_graph::{
-    types::{BorrowedPackageKey, Package},
     CompositionGraph, EncodeOptions,
+    types::{BorrowedPackageKey, Package},
 };
 use wac_parser::Document;
 

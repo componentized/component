@@ -1,5 +1,3 @@
-#![no_main]
-
 use std::{collections::BTreeMap, fmt::Display};
 
 use crate::{
