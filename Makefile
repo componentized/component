@@ -66,11 +66,6 @@ endef
 
 $(foreach name,$(TOOLS),$(eval $(call INSTALL_TOOL,$(name))))
 
-# the target a cargo component is built for, the package's `default-target`, e.g. `wasm32-wasip3`.
-# wasm32-unknown-unknown builds a core module that is wrapped as a component, a wasi target builds
-# a component.
-cargo_target = $(or $(shell sed -n 's/^default-target = "\(.*\)"$$/\1/p' components/$(1)/Cargo.toml),wasm32-unknown-unknown)
-
 .PHONY: components
 components: ${COMPONENTS_DIR}/interface.wasm $(foreach component,$(COMPONENTS),${COMPONENTS_DIR}/$(component)/$(component).wasm ${COMPONENTS_DIR}/$(component)/$(component).debug.wasm)
 
@@ -118,20 +113,12 @@ ${COMPONENTS_DIR}/$1/$1.debug.wasm: components/$1/$1.wkg ${COMPONENTS_DIR}/$1/RE
 else ifneq ($(wildcard components/$1/Cargo.toml),)
 
 ${COMPONENTS_DIR}/$1/$1.wasm: Cargo.toml Cargo.lock components/wit/deps $(shell find components/$1 -type f) $(shell find crates -type f 2> /dev/null) ${COMPONENTS_DIR}/$1/README.md | $(call tool,wasm-tools)
-	cargo build -p $1 --target $(call cargo_target,$1) --release
-ifeq ($(call cargo_target,$1),wasm32-unknown-unknown)
+	cargo build -p $1 --target wasm32-unknown-unknown --release
 	wasm-tools component new target/wasm32-unknown-unknown/release/$(subst -,_,$1).wasm -o ${COMPONENTS_DIR}/$1/$1.wasm
-else
-	cp target/$(call cargo_target,$1)/release/$(subst -,_,$1).wasm ${COMPONENTS_DIR}/$1/$1.wasm
-endif
 
 ${COMPONENTS_DIR}/$1/$1.debug.wasm: Cargo.toml Cargo.lock components/wit/deps $(shell find components/$1 -type f) $(shell find crates -type f 2> /dev/null) ${COMPONENTS_DIR}/$1/README.md | $(call tool,wasm-tools)
-	cargo build --target $(call cargo_target,$1) -p $1
-ifeq ($(call cargo_target,$1),wasm32-unknown-unknown)
+	cargo build --target wasm32-unknown-unknown -p $1
 	wasm-tools component new target/wasm32-unknown-unknown/debug/$(subst -,_,$1).wasm -o ${COMPONENTS_DIR}/$1/$1.debug.wasm
-else
-	cp target/$(call cargo_target,$1)/debug/$(subst -,_,$1).wasm ${COMPONENTS_DIR}/$1/$1.debug.wasm
-endif
 
 endif
 

@@ -1,0 +1,8 @@
+package componentized:component;
+
+export new local:path-loader-router{ 
+    filesystem-loader: new local:filesystem-loader{ ... }.path-loader,
+    http-loader: new local:http-loader{ ... }.path-loader,
+    oci-loader: new local:oci-loader{ ... }.path-loader,
+    ...
+}...;
