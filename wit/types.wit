@@ -1,9 +1,32 @@
+/// Types shared by the interfaces in this package.
+@since(version = 0.0.0-dev)
 interface types {
 
-    variant error {
+    /// An error from a call.
+    @since(version = 0.0.0-dev)
+    variant error-code {
+        /// A value cannot be parsed to its expected type.
+        malformed(malformed),
+        /// A wasm that must be a component is not, e.g. a core module. Calls accepting multiple
+        /// wasms name the one that is not a component.
+        not-component(option<string>),
+        /// The item does not exist, optionally naming it, e.g. a path, URL, reference or package.
+        not-found(option<string>),
+        /// Any other error, with an optional message.
         other(option<string>),
     }
 
-    type component = list<u8>;
+    /// A `malformed` input.
+    @since(version = 0.0.0-dev)
+    record malformed {
+        /// Calls accepting multiple inputs name the one that is malformed.
+        name: option<string>,
+        /// Why the input is invalid.
+        message: string,
+    }
+
+    /// The bytes of a WebAssembly binary, a component unless stated otherwise.
+    @since(version = 0.0.0-dev)
+    type wasm = list<u8>;
 
 }

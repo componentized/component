@@ -1,5 +1,8 @@
 use crate::{
-    componentized::component::{path_loader, types::Error},
+    componentized::component::{
+        path_loader,
+        types::{ErrorCode, Malformed},
+    },
     exports::wasi::cli::run::Guest,
     wasi::cli::{environment, stderr, stdout},
 };
@@ -41,8 +44,20 @@ impl Guest for LoaderHarness {
             }
             Err(e) => {
                 let message = match e {
-                    Error::Other(Some(message)) => message,
-                    Error::Other(None) => "--unknown error--".to_string(),
+                    ErrorCode::Malformed(Malformed {
+                        name: Some(name),
+                        message,
+                    }) => format!("{name} is malformed: {message}"),
+                    ErrorCode::Malformed(Malformed {
+                        name: None,
+                        message,
+                    }) => format!("malformed: {message}"),
+                    ErrorCode::NotComponent(Some(name)) => format!("{name} is not a component"),
+                    ErrorCode::NotComponent(None) => "not a component".to_string(),
+                    ErrorCode::NotFound(Some(name)) => format!("{name} not found"),
+                    ErrorCode::NotFound(None) => "not found".to_string(),
+                    ErrorCode::Other(Some(message)) => message,
+                    ErrorCode::Other(None) => "--unknown error--".to_string(),
                 };
                 let _ = write_to!(stderr, format!("{}\n", message).into_bytes());
                 Err(())

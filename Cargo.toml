@@ -1,13 +1,13 @@
 [workspace]
 resolver = "2"
 members = [
-    "components/extract-wit",
     "components/filesystem-loader",
     "components/http-loader",
     "components/oci-loader",
     "components/path-loader-router",
     "components/test-loader-harness",
     "components/wac-loader",
+    "components/wit-tools",
 ]
 
 [workspace.dependencies]
@@ -15,7 +15,28 @@ anyhow = "1"
 indexmap = "2.14.0"
 wac-graph = "0.12.0"
 wac-parser = "0.12.0"
-wasmparser = "0.259.0"
+wasmparser = "0.260.0"
+wasmtime = "49.0.2"
+wat = "1.260.0"
 wit-bindgen = "0.62.0"
-wit-component = "0.259.0"
-wit-parser = "0.259.0"
+wit-component = "0.260.0"
+wit-parser = "0.260.0"
+
+# wasmtime compiles components in the native tests, an unoptimized cranelift is very slow. These
+# crates are only built for the host, the components are unaffected.
+[profile.dev.package.cranelift-codegen]
+opt-level = 3
+[profile.dev.package.cranelift-frontend]
+opt-level = 3
+[profile.dev.package.cranelift-entity]
+opt-level = 3
+[profile.dev.package.cranelift-bforest]
+opt-level = 3
+[profile.dev.package.regalloc2]
+opt-level = 3
+[profile.dev.package.wasmtime-internal-cranelift]
+opt-level = 3
+[profile.dev.package.wasmtime-environ]
+opt-level = 3
+[profile.dev.package.wasmtime]
+opt-level = 3

@@ -16,6 +16,7 @@ updates:
       wasm-tools:
         patterns:
           - wasmparser
+          - wasmprinter
           - wat
           - wit-component
           - wit-parser

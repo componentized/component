@@ -1,5 +1,7 @@
 package componentized:component@0.0.0-dev;
 
+/// Imports every interface in the package, for consumers of the package.
+@since(version = 0.0.0-dev)
 world imports {
     import types;
     import path-loader;

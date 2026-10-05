@@ -6,9 +6,10 @@ Test harness for a path loader.
 make components/test-loader && \
   wasmtime run \
     -Wcomponent-model-map \
+    -Wcomponent-model-implements \
     -Shttp \
     --dir=. \
-    ./lib/test-loader.wasm \
+    ./target/components/test-loader/test-loader.wasm \
     oci://ghcr.io/componentized/config/empty:0.2.1 \
     | wasm-tools component wit
 ```
