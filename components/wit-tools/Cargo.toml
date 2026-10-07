@@ -1,5 +1,5 @@
 [package]
-name = "extract-wit"
+name = "wit-tools"
 version = "0.1.0"
 edition = "2024"
 license = "Apache-2.0"
@@ -9,8 +9,14 @@ crate-type = ["cdylib"]
 
 [dependencies]
 anyhow = { workspace = true }
+id-arena = "2"
 semver = "1"
 wasmparser = { workspace = true }
 wit-bindgen = { workspace = true }
 wit-component = { workspace = true }
 wit-parser = { workspace = true }
+
+[dev-dependencies]
+wasmtime = { workspace = true }
+wat = { workspace = true }
+wit-component = { workspace = true, features = ["dummy-module"] }

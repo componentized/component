@@ -1,10 +1,8 @@
 use std::path::Path;
 
 use crate::{
-    exports::componentized::component::{
-        path_loader::Guest,
-        types::{Component, Error},
-    },
+    componentized::component::types::{ErrorCode, Wasm},
+    exports::componentized::component::path_loader::Guest,
     wasi::filesystem::{preopens, types as filesystem},
 };
 
@@ -12,26 +10,40 @@ pub(crate) struct FilesystemLoader;
 
 impl Guest for FilesystemLoader {
     #[allow(async_fn_in_trait)]
-    async fn load(path: String) -> Result<Component, Error> {
-        let (dir, path) = resolve(&path)?;
-        let file = dir
-            .open_at(
-                filesystem::PathFlags::SYMLINK_FOLLOW,
-                path,
-                filesystem::OpenFlags::empty(),
-                filesystem::DescriptorFlags::READ,
-            )
-            .await?;
-        let (data, result) = file.read_via_stream(0);
-        let component = data.collect().await;
-        result.await?;
-        Ok(component)
+    async fn load(path: String) -> Result<Wasm, ErrorCode> {
+        load_path(&path)
+            .await
+            .map_err(|error| name_not_found(error, &path))
+    }
+}
+
+async fn load_path(path: &str) -> Result<Wasm, ErrorCode> {
+    let (dir, path) = resolve(path)?;
+    let file = dir
+        .open_at(
+            filesystem::PathFlags::SYMLINK_FOLLOW,
+            path,
+            filesystem::OpenFlags::empty(),
+            filesystem::DescriptorFlags::READ,
+        )
+        .await?;
+    let (data, result) = file.read_via_stream(0);
+    let component = data.collect().await;
+    result.await?;
+    Ok(component)
+}
+
+/// Names the loaded path in a `not-found` error that does not name what was not found.
+fn name_not_found(error: ErrorCode, path: &str) -> ErrorCode {
+    match error {
+        ErrorCode::NotFound(None) => ErrorCode::NotFound(Some(path.to_string())),
+        error => error,
     }
 }
 
 /// Resolve a path to the preopened directory that contains it and the path relative to that
 /// directory. When multiple preopens match, the most specific one wins.
-fn resolve(path: &str) -> Result<(filesystem::Descriptor, String), Error> {
+fn resolve(path: &str) -> Result<(filesystem::Descriptor, String), ErrorCode> {
     let path = Path::new(path);
     let mut resolved: Option<(usize, filesystem::Descriptor, String)> = None;
     for (dir, name) in preopens::get_directories() {
@@ -50,14 +62,14 @@ fn resolve(path: &str) -> Result<(filesystem::Descriptor, String), Error> {
         }
     }
     resolved.map(|(_, dir, path)| (dir, path)).ok_or_else(|| {
-        Error::Other(Some(format!(
+        ErrorCode::Other(Some(format!(
             "filesystem: no preopen for path {}",
             path.display()
         )))
     })
 }
 
-impl From<filesystem::ErrorCode> for Error {
+impl From<filesystem::ErrorCode> for ErrorCode {
     fn from(value: filesystem::ErrorCode) -> Self {
         match value {
             filesystem::ErrorCode::Access => Self::Other(Some("filesystem: access".to_string())),
@@ -101,7 +113,7 @@ impl From<filesystem::ErrorCode> for Error {
             filesystem::ErrorCode::NoDevice => {
                 Self::Other(Some("filesystem: no-device".to_string()))
             }
-            filesystem::ErrorCode::NoEntry => Self::Other(Some("filesystem: no-entry".to_string())),
+            filesystem::ErrorCode::NoEntry => Self::NotFound(None),
             filesystem::ErrorCode::NoLock => Self::Other(Some("filesystem: no-lock".to_string())),
             filesystem::ErrorCode::InsufficientMemory => {
                 Self::Other(Some("filesystem: insufficient-memory".to_string()))

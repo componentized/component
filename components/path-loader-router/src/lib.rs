@@ -1,13 +1,13 @@
-use crate::exports::componentized::component::{
-    path_loader::Guest,
-    types::{Component, Error},
+use crate::{
+    componentized::component::types::{ErrorCode, Malformed, Wasm},
+    exports::componentized::component::path_loader::Guest,
 };
 
 pub(crate) struct PathLoader;
 
 impl Guest for PathLoader {
     #[allow(async_fn_in_trait)]
-    async fn load(path: String) -> Result<Component, Error> {
+    async fn load(path: String) -> Result<Wasm, ErrorCode> {
         if path.starts_with("http:") {
             http_loader::load(path).await
         } else if path.starts_with("https:") {
@@ -15,15 +15,19 @@ impl Guest for PathLoader {
         } else if path.starts_with("file:///") {
             filesystem_loader::load(path[7..].to_string()).await
         } else if path.starts_with("file://") {
-            Err(Error::Other(Some(format!(
-                "invalid filesystem-path loader: {path}"
-            ))))
+            Err(ErrorCode::Malformed(Malformed {
+                name: None,
+                message: format!("invalid filesystem-path loader: {path}"),
+            }))
         } else if path.starts_with("file:") {
             filesystem_loader::load(path[5..].to_string()).await
         } else if path.starts_with("oci://") {
             oci_loader::load(path[6..].to_string()).await
         } else {
-            Err(Error::Other(Some(format!("unknown path loader: {path}"))))
+            Err(ErrorCode::Malformed(Malformed {
+                name: None,
+                message: format!("unknown path loader: {path}"),
+            }))
         }
     }
 }

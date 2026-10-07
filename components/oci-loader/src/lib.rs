@@ -1,62 +1,79 @@
 use crate::{
-    componentized::oci::client::{self as oci, Digest, Reference},
-    exports::componentized::component::{
-        path_loader::Guest,
-        types::{Component, Error},
+    componentized::{
+        component::types::{ErrorCode, Malformed, Wasm},
+        oci::client::{self as oci, Digest, Reference},
     },
+    exports::componentized::component::path_loader::Guest,
 };
 
 pub(crate) struct OCILoader;
 
 impl Guest for OCILoader {
     #[allow(async_fn_in_trait)]
-    async fn load(path: String) -> Result<Component, Error> {
-        let manifest_reference = oci::parse_reference(&path)?;
-        let manifest = match oci::get_manifest(manifest_reference.clone()).await? {
-            oci::Manifest::OciImageV1(oci_image_manifest_v1) => oci_image_manifest_v1,
-            _ => Err(Error::Other(Some("unexpected manifest".to_string())))?,
-        };
-        match manifest.config.media_type {
-            oci::MediaType::ApplicationVndWasmConfigV0(oci::MediaTypeSuffix::Json) => {}
-            _ => Err(Error::Other(Some(
-                "unexpected config media type".to_string(),
-            )))?,
-        };
-        if manifest.layers.len() != 1 {
-            Err(Error::Other(Some("unknown artifact layout".to_string())))?
-        }
-        let component_descriptor = manifest.layers.first().unwrap();
-        match component_descriptor.media_type {
-            oci::MediaType::ApplicationWasm => {}
-            _ => Err(Error::Other(Some(
-                "unknown artifact media type".to_string(),
-            )))?,
-        }
+    async fn load(path: String) -> Result<Wasm, ErrorCode> {
+        load_reference(&path)
+            .await
+            .map_err(|error| name_not_found(error, &path))
+    }
+}
 
-        let config_reference = manifest_reference.with_digest(&manifest.config.digest);
-        let config =
-            match oci::get_config(config_reference, Some(manifest.config.media_type.clone()))
-                .await?
-            {
-                oci::Config::WasmV0(wasm_config_v0) => wasm_config_v0,
-                _ => Err(Error::Other(Some("unexpected config".to_string())))?,
-            };
-        if config.component.is_none() {
-            Err(Error::Other(Some("not a component".to_string())))?
-        }
+async fn load_reference(path: &str) -> Result<Wasm, ErrorCode> {
+    let manifest_reference = oci::parse_reference(path)?;
+    let manifest = match oci::get_manifest(manifest_reference.clone()).await? {
+        oci::Manifest::OciImageV1(oci_image_manifest_v1) => oci_image_manifest_v1,
+        _ => Err(ErrorCode::Other(Some("unexpected manifest".to_string())))?,
+    };
+    match manifest.config.media_type {
+        oci::MediaType::ApplicationVndWasmConfigV0(oci::MediaTypeSuffix::Json) => {}
+        _ => Err(ErrorCode::Other(Some(
+            "unexpected config media type".to_string(),
+        )))?,
+    };
+    if manifest.layers.len() != 1 {
+        Err(ErrorCode::Other(Some(
+            "unknown artifact layout".to_string(),
+        )))?
+    }
+    let component_descriptor = manifest.layers.first().unwrap();
+    match component_descriptor.media_type {
+        oci::MediaType::ApplicationWasm => {}
+        _ => Err(ErrorCode::Other(Some(
+            "unknown artifact media type".to_string(),
+        )))?,
+    }
 
-        let component_reference =
-            manifest_reference.with_digest(&manifest.layers.first().unwrap().digest);
-        let component = oci::get_blob(component_reference).await?;
-        if component_descriptor.size != component.len() as u64 {
-            Err(Error::Other(Some(format!(
+    let config_reference = manifest_reference.with_digest(&manifest.config.digest);
+    let config =
+        match oci::get_config(config_reference, Some(manifest.config.media_type.clone())).await? {
+            oci::Config::WasmV0(wasm_config_v0) => wasm_config_v0,
+            _ => Err(ErrorCode::Other(Some("unexpected config".to_string())))?,
+        };
+    if config.component.is_none() {
+        Err(ErrorCode::NotComponent(None))?
+    }
+
+    let component_reference =
+        manifest_reference.with_digest(&manifest.layers.first().unwrap().digest);
+    let component = oci::get_blob(component_reference).await?;
+    if component_descriptor.size != component.len() as u64 {
+        Err(ErrorCode::Malformed(Malformed {
+            name: None,
+            message: format!(
                 "component size mismatch: expected {expected}, actual {actual}",
                 expected = component_descriptor.size,
                 actual = component.len()
-            ))))?
-        }
+            ),
+        }))?
+    }
 
-        Ok(component)
+    Ok(component)
+}
+
+/// Names the loaded path in a `not-found` error that does not name what was not found.
+fn name_not_found(error: ErrorCode, path: &str) -> ErrorCode {
+    match error {
+        ErrorCode::NotFound(None) => ErrorCode::NotFound(Some(path.to_string())),
+        error => error,
     }
 }
 
@@ -71,12 +88,10 @@ impl Reference {
     }
 }
 
-impl From<oci::ErrorCode> for Error {
+impl From<oci::ErrorCode> for ErrorCode {
     fn from(value: oci::ErrorCode) -> Self {
         match value {
-            oci::ErrorCode::BlobUnknown(message) => {
-                Self::Other(Some(format!("OCI error blob-unknown: {message}")))
-            }
+            oci::ErrorCode::BlobUnknown(_) => Self::NotFound(None),
             oci::ErrorCode::BlobUploadInvalid(message) => {
                 Self::Other(Some(format!("OCI error blob-upload-invalid: {message}")))
             }
@@ -86,21 +101,15 @@ impl From<oci::ErrorCode> for Error {
             oci::ErrorCode::DigestInvalid(message) => {
                 Self::Other(Some(format!("OCI error digest-invalid: {message}")))
             }
-            oci::ErrorCode::ManifestBlobUnknown(message) => {
-                Self::Other(Some(format!("OCI error manifest-blob-unknown: {message}")))
-            }
+            oci::ErrorCode::ManifestBlobUnknown(_) => Self::NotFound(None),
             oci::ErrorCode::ManifestInvalid(message) => {
                 Self::Other(Some(format!("OCI error manifest-invalid: {message}")))
             }
-            oci::ErrorCode::ManifestUnknown(message) => {
-                Self::Other(Some(format!("OCI error manifest-unknown: {message}")))
-            }
+            oci::ErrorCode::ManifestUnknown(_) => Self::NotFound(None),
             oci::ErrorCode::NameInvalid(message) => {
                 Self::Other(Some(format!("OCI error name-invalid: {message}")))
             }
-            oci::ErrorCode::NameUnknown(message) => {
-                Self::Other(Some(format!("OCI error name-unknown: {message}")))
-            }
+            oci::ErrorCode::NameUnknown(_) => Self::NotFound(None),
             oci::ErrorCode::SizeInvalid(message) => {
                 Self::Other(Some(format!("OCI error size-invalid: {message}")))
             }

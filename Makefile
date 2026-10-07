@@ -21,7 +21,7 @@ relpath = $(if $(filter $(CURDIR),$(abspath $(1))),.,$(patsubst $(CURDIR)/%,%,$(
 
 
 .PHONY: all
-all: components
+all: tools wit components test
 
 .PHONY: clean
 clean: clean-wit

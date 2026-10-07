@@ -1,0 +1,38 @@
+/// Loads a component from a path.
+@since(version = 0.0.0-dev)
+interface path-loader {
+    use types.{wasm, error-code};
+
+    /// Loads the component at `path`. The forms of path supported depend on the
+    /// implementation, e.g. a filesystem path, an HTTP URL or an OCI reference.
+    @since(version = 0.0.0-dev)
+    load: async func(path: string) -> result<wasm, error-code>;
+}
+
+/// Composes components with WAC (WebAssembly Compositions).
+@since(version = 0.0.0-dev)
+interface wac-loader {
+    use types.{wasm, error-code};
+
+    type package-name = string;
+
+    /// A component, named by the package a WAC composition refers to it as.
+    @since(version = 0.0.0-dev)
+    type dependency = tuple<package-name, wasm>;
+
+    /// How to compose components.
+    @since(version = 0.0.0-dev)
+    variant plan {
+        /// A WAC script.
+        wac(string),
+        // TODO add graph model
+    }
+
+    /// Plugs the exports of each of `plugs` into the matching imports of `socket`, returning the
+    /// composed component.
+    @since(version = 0.0.0-dev)
+    plug: async func(socket: wasm, plugs: list<wasm>) -> result<wasm, error-code>;
+    /// Composes the `dependencies` as described by `plan`, returning the composed component.
+    @since(version = 0.0.0-dev)
+    compose: async func(plan: plan, dependencies: list<dependency>) -> result<wasm, error-code>;
+}
