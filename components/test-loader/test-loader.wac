@@ -9,7 +9,7 @@ let oci-client = new local:dep-componentized-oci-client {
 
 export new local:test-loader-harness {
     path-loader: new local:path-loader {
-        "componentized:http/client@0.1.0-dev": http-client.client,
+        "componentized:http/client@0.1.0": http-client.client,
         "componentized:oci/client@0.0.0-dev": oci-client.client,
         ...
     }.path-loader,
