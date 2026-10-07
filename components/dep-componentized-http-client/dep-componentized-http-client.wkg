@@ -1,2 +1,2 @@
-ghcr.io/componentized/http/client:0.1.0-dev@sha256:cec0f0e8cf10ae936ff8b45a78ac199c0f7a8e2c0a3cb1b3e86ec6cac6ad1646
-ghcr.io/componentized/http/client:0.1.0-dev_debug@sha256:bfe41f3aa3fb3329fb12c2fa8fe1d6048b95bd4fcb0d87f102f5a8d012a2a51d
+ghcr.io/componentized/http/client:0.1.0@sha256:17dbb9bbd31e700bf690fc4eeb9cb1c8f920f87eb404fd3744d48de6020ee330
+ghcr.io/componentized/http/client:0.1.0_debug@sha256:0d1cbb52566e781385526c2656b734e44e53174add2897ea588a761b587fc906
