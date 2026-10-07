@@ -9,7 +9,7 @@ registry = "componentized.dev"
 [[packages.versions]]
 requirement = "=0.1.0-dev"
 version = "0.1.0-dev"
-digest = "sha256:f74b53af4b5ecb4c77e8bd47887920e0626efb2e45e8a9386f2519910faf5e5c"
+digest = "sha256:2a9e83508ed025c55436c118a1e06ff68b6d00bc61085ba875daeec6452435f5"
 
 [[packages]]
 name = "componentized:oci"
