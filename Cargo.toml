@@ -15,12 +15,12 @@ anyhow = "1"
 indexmap = "2.14.0"
 wac-graph = "0.12.0"
 wac-parser = "0.12.0"
-wasmparser = "0.260.0"
+wasmparser = "0.261.0"
 wasmtime = "49.0.2"
 wat = "1.260.0"
 wit-bindgen = "0.62.0"
-wit-component = "0.260.0"
-wit-parser = "0.260.0"
+wit-component = "0.261.0"
+wit-parser = "0.261.0"
 
 # wasmtime compiles components in the native tests, an unoptimized cranelift is very slow. These
 # crates are only built for the host, the components are unaffected.
