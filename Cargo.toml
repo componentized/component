@@ -22,6 +22,14 @@ wit-bindgen = "0.62.0"
 wit-component = "0.261.0"
 wit-parser = "0.261.0"
 
+# release builds are only published as components, smaller beats faster. "s" over "z" keeps the
+# parsers in wac-loader and wit-tools fast.
+[profile.release]
+opt-level = "s"
+lto = true
+codegen-units = 1
+strip = "debuginfo"
+
 # wasmtime compiles components in the native tests, an unoptimized cranelift is very slow. These
 # crates are only built for the host, the components are unaffected.
 [profile.dev.package.cranelift-codegen]

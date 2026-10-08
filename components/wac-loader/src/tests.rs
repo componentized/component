@@ -4,7 +4,7 @@ use std::{
 };
 
 use crate::{
-    WacLoader,
+    COMPONENT_HEADER, WacLoader,
     componentized::component::types::{ErrorCode, Malformed},
     exports::componentized::component::wac_loader::{Guest, Plan},
 };
@@ -73,7 +73,7 @@ fn compose_components() {
     ))
     .expect("composes");
 
-    assert!(wasmparser::Parser::is_component(&composed));
+    assert!(composed.starts_with(&COMPONENT_HEADER));
 }
 
 /// A component header followed by an invalid section.

@@ -24,12 +24,20 @@ relpath = $(if $(filter $(CURDIR),$(abspath $(1))),.,$(patsubst $(CURDIR)/%,%,$(
 all: tools wit components test
 
 .PHONY: clean
-clean: clean-wit
+clean: clean-components clean-wit 
+	@:
+
+.PHONY: clean-all
+clean-all: clean-components clean-tools clean-wit
 	cargo clean
 
 .PHONY: clean-components
 clean-components: clean-wit
 	rm -rf ${COMPONENTS_DIR}
+
+.PHONY: clean-tools
+clean-tools:
+	rm -rf ${TOOLS_DIR}
 
 .PHONY: clean-wit ## Remove the fetched wit dependencies, fetched again by `make wit`
 clean-wit:

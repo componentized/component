@@ -1,7 +1,7 @@
 use indexmap::IndexMap;
 use wac_graph::{
     CompositionGraph, EncodeOptions,
-    types::{BorrowedPackageKey, Package},
+    types::{BorrowedPackageKey, Package, Types},
 };
 use wac_parser::Document;
 
@@ -17,19 +17,13 @@ impl Guest for WacLoader {
     async fn plug(socket: Wasm, plugs: Vec<Wasm>) -> Result<Wasm, ErrorCode> {
         let mut graph = CompositionGraph::new();
 
-        let socket = Package::from_bytes(
-            "socket",
-            None,
-            component("socket", socket)?,
-            graph.types_mut(),
-        )?;
+        let socket = package("socket", socket, graph.types_mut())?;
         let socket = graph.register_package(socket)?;
 
         let mut graph_plugs = Vec::new();
         for (i, plug) in plugs.into_iter().enumerate() {
             let name = format!("plug:{i}");
-            let plug = component(&name, plug)?;
-            let plug = Package::from_bytes(&name, None, plug, graph.types_mut())?;
+            let plug = package(&name, plug, graph.types_mut())?;
             let plug = graph.register_package(plug)?;
             graph_plugs.push(plug);
         }
@@ -46,11 +40,15 @@ impl Guest for WacLoader {
             Plan::Wac(script) => {
                 let document = Document::parse(&script)?;
 
+                // the resolution only parses the packages the script uses, each dependency is
+                // parsed up front so a malformed one is reported even when it is unused
+                let mut types = Types::default();
                 let (names, components): (Vec<String>, Vec<Wasm>) = deps.into_iter().unzip();
                 let mut dependencies = IndexMap::new();
                 for (pkg, wasm) in names.iter().zip(components) {
                     let key = BorrowedPackageKey::from_name_and_version(pkg, None);
-                    dependencies.insert(key, component(pkg, wasm)?);
+                    let package = package(pkg, wasm, &mut types)?;
+                    dependencies.insert(key, package.bytes().to_vec());
                 }
                 let resolution = document.resolve(dependencies)?;
                 let component = resolution.encode(EncodeOptions::default())?;
@@ -61,27 +59,22 @@ impl Guest for WacLoader {
     }
 }
 
-/// The wasm when it is a valid component, otherwise a `not-component` or `malformed` error naming
-/// it.
-fn component(name: &str, wasm: Wasm) -> Result<Wasm, ErrorCode> {
-    if !wasmparser::Parser::is_component(&wasm) {
+/// The header of a binary-encoded component, the wasm magic number followed by the component
+/// version and layer.
+const COMPONENT_HEADER: [u8; 8] = *b"\0asm\x0d\x00\x01\x00";
+
+/// Parses and validates the wasm as a package, otherwise a `not-component` or `malformed` error
+/// naming it.
+fn package(name: &str, wasm: Wasm, types: &mut Types) -> Result<Package, ErrorCode> {
+    if !wasm.starts_with(&COMPONENT_HEADER) {
         return Err(ErrorCode::NotComponent(Some(name.to_string())));
     }
-    wasmparser::Validator::new_with_features(wasmparser::WasmFeatures::all())
-        .validate_all(&wasm)
-        .map_err(|error| {
-            ErrorCode::Malformed(Malformed {
-                name: Some(name.to_string()),
-                message: error.to_string(),
-            })
-        })?;
-    Ok(wasm)
-}
-
-impl From<anyhow::Error> for ErrorCode {
-    fn from(err: anyhow::Error) -> Self {
-        Self::Other(Some(err.to_string()))
-    }
+    Package::from_bytes(name, None, wasm, types).map_err(|error| {
+        ErrorCode::Malformed(Malformed {
+            name: Some(name.to_string()),
+            message: format!("{error:#}"),
+        })
+    })
 }
 
 impl From<wac_graph::EncodeError> for ErrorCode {

@@ -1568,11 +1568,9 @@ dependencies = [
 name = "wac-loader"
 version = "0.1.0"
 dependencies = [
- "anyhow",
  "indexmap",
  "wac-graph",
  "wac-parser",
- "wasmparser 0.261.0",
  "wat",
  "wit-bindgen",
 ]
