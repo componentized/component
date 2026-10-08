@@ -2,6 +2,7 @@ use crate::{
     componentized::{
         component::types::{ErrorCode, Malformed, Wasm},
         oci::client::{self as oci, Digest, Reference},
+        oci::media_types,
     },
     exports::componentized::component::path_loader::Guest,
 };
@@ -23,23 +24,21 @@ async fn load_reference(path: &str) -> Result<Wasm, ErrorCode> {
         oci::Manifest::OciImageV1(oci_image_manifest_v1) => oci_image_manifest_v1,
         _ => Err(ErrorCode::Other(Some("unexpected manifest".to_string())))?,
     };
-    match manifest.config.media_type {
-        oci::MediaType::ApplicationVndWasmConfigV0(oci::MediaTypeSuffix::Json) => {}
-        _ => Err(ErrorCode::Other(Some(
+    if manifest.config.media_type != media_types::application_vnd_wasm_config_v0_json() {
+        Err(ErrorCode::Other(Some(
             "unexpected config media type".to_string(),
-        )))?,
-    };
+        )))?
+    }
     if manifest.layers.len() != 1 {
         Err(ErrorCode::Other(Some(
             "unknown artifact layout".to_string(),
         )))?
     }
     let component_descriptor = manifest.layers.first().unwrap();
-    match component_descriptor.media_type {
-        oci::MediaType::ApplicationWasm => {}
-        _ => Err(ErrorCode::Other(Some(
+    if component_descriptor.media_type != media_types::application_wasm() {
+        Err(ErrorCode::Other(Some(
             "unknown artifact media type".to_string(),
-        )))?,
+        )))?
     }
 
     let config_reference = manifest_reference.with_digest(&manifest.config.digest);
@@ -54,7 +53,9 @@ async fn load_reference(path: &str) -> Result<Wasm, ErrorCode> {
 
     let component_reference =
         manifest_reference.with_digest(&manifest.layers.first().unwrap().digest);
-    let component = oci::get_blob(component_reference).await?;
+    let (component, verified) = oci::get_blob(component_reference).await?;
+    let component = component.collect().await;
+    verified.await?;
     if component_descriptor.size != component.len() as u64 {
         Err(ErrorCode::Malformed(Malformed {
             name: None,
