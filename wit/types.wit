@@ -1,9 +1,9 @@
 /// Types shared by the interfaces in this package.
-@since(version = 0.0.0-dev)
+@since(version = 0.1.0)
 interface types {
 
     /// An error from a call.
-    @since(version = 0.0.0-dev)
+    @since(version = 0.1.0)
     variant error-code {
         /// A value cannot be parsed to its expected type.
         malformed(malformed),
@@ -17,7 +17,7 @@ interface types {
     }
 
     /// A `malformed` input.
-    @since(version = 0.0.0-dev)
+    @since(version = 0.1.0)
     record malformed {
         /// Calls accepting multiple inputs name the one that is malformed.
         name: option<string>,
@@ -26,7 +26,7 @@ interface types {
     }
 
     /// The bytes of a WebAssembly binary, a component unless stated otherwise.
-    @since(version = 0.0.0-dev)
+    @since(version = 0.1.0)
     type wasm = list<u8>;
 
 }
