@@ -1,45 +1,45 @@
 package componentized:components;
 
 world wit-tools {
-    export componentized:component/wit@0.1.0;
+    export componentized:component/wit@0.1.1-dev;
 }
 
 world filesystem-loader {
     import wasi:filesystem/types@0.3.0;
     import wasi:filesystem/preopens@0.3.0;
-    import componentized:component/types@0.1.0;
-    export componentized:component/path-loader@0.1.0;
+    import componentized:component/types@0.1.1-dev;
+    export componentized:component/path-loader@0.1.1-dev;
 }
 
 world http-loader {
     import componentized:http/client@0.1.0;
-    import componentized:component/types@0.1.0;
-    export componentized:component/path-loader@0.1.0;
+    import componentized:component/types@0.1.1-dev;
+    export componentized:component/path-loader@0.1.1-dev;
 }
 
 world oci-loader {
     import componentized:oci/client@0.1.0;
     import componentized:oci/media-types@0.1.0;
-    import componentized:component/types@0.1.0;
-    export componentized:component/path-loader@0.1.0;
+    import componentized:component/types@0.1.1-dev;
+    export componentized:component/path-loader@0.1.1-dev;
 }
 
 world path-loader {
-    import filesystem-loader: componentized:component/path-loader@0.1.0;
-    import http-loader: componentized:component/path-loader@0.1.0;
-    import oci-loader: componentized:component/path-loader@0.1.0;
+    import filesystem-loader: componentized:component/path-loader@0.1.1-dev;
+    import http-loader: componentized:component/path-loader@0.1.1-dev;
+    import oci-loader: componentized:component/path-loader@0.1.1-dev;
 
-    import componentized:component/types@0.1.0;
-    export componentized:component/path-loader@0.1.0;
+    import componentized:component/types@0.1.1-dev;
+    export componentized:component/path-loader@0.1.1-dev;
 }
 
 world wac-loader {
-    import componentized:component/types@0.1.0;
-    export componentized:component/wac-loader@0.1.0;
+    import componentized:component/types@0.1.1-dev;
+    export componentized:component/wac-loader@0.1.1-dev;
 }
 
 world test-loader-harness {
-    import componentized:component/path-loader@0.1.0;
+    import componentized:component/path-loader@0.1.1-dev;
     import wasi:cli/environment@0.3.0;
     import wasi:cli/stdout@0.3.0;
     import wasi:cli/stderr@0.3.0;

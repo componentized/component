@@ -1,4 +1,4 @@
-package componentized:component@0.1.0;
+package componentized:component@0.1.1-dev;
 
 /// Imports every interface in the package, for consumers of the package.
 @since(version = 0.1.0)

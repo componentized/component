@@ -16,7 +16,7 @@ use wasmtime::{
     component::{Component, Instance, Linker, Val},
 };
 
-const WIT_INTERFACE: &str = "componentized:component/wit@0.1.0";
+const WIT_INTERFACE: &str = "componentized:component/wit@0.1.1-dev";
 
 /// The root of the repository, where the Makefile is.
 fn repo_root() -> &'static Path {
@@ -304,11 +304,11 @@ fn summarize_itself() {
 
     assert_eq!(
         strings(field(&summary, "imports")),
-        vec!["componentized:component/types@0.1.0"]
+        vec!["componentized:component/types@0.1.1-dev"]
     );
     assert_eq!(
         strings(field(&summary, "exports")),
-        vec!["componentized:component/wit@0.1.0"]
+        vec!["componentized:component/wit@0.1.1-dev"]
     );
 }
 
@@ -333,7 +333,7 @@ fn summarize_parsed() {
 
     assert_eq!(
         strings(field(&summary, "exports")),
-        vec!["componentized:component/wit@0.1.0"]
+        vec!["componentized:component/wit@0.1.1-dev"]
     );
 }
 
@@ -396,7 +396,7 @@ fn print_itself() {
     assert_eq!(printed, expected_print(&own_bytes));
     assert!(printed.starts_with("package root:component;\n"));
     assert_eq!(printed.matches("package root:component").count(), 1);
-    assert!(printed.contains("package componentized:component@0.1.0 {"));
+    assert!(printed.contains("package componentized:component@0.1.1-dev {"));
 }
 
 #[test]
@@ -480,7 +480,7 @@ fn print_itself_without_additional_packages() {
 
     assert_eq!(
         printed,
-        "package root:component;\n\nworld root {\n  import componentized:component/types@0.1.0;\n\n  export componentized:component/wit@0.1.0;\n}\n"
+        "package root:component;\n\nworld root {\n  import componentized:component/types@0.1.1-dev;\n\n  export componentized:component/wit@0.1.1-dev;\n}\n"
     );
 }
 
@@ -507,7 +507,7 @@ fn print_itself_selected_packages() {
         .expect("prints");
     // componentized:component is the only other package
     assert_eq!(printed, all);
-    assert!(printed.contains("package componentized:component@0.1.0 {"));
+    assert!(printed.contains("package componentized:component@0.1.1-dev {"));
 }
 
 #[test]
