@@ -30,6 +30,15 @@ lto = true
 codegen-units = 1
 strip = "debuginfo"
 
+[profile.component-debug]
+inherits = "dev"
+opt-level = 1        # most of the size win; locals mostly still visible
+lto = true
+codegen-units = 1
+incremental = false  # no benefit with one codegen unit
+debug = "full"       # variables and types for lldb, file:line in backtraces
+# kept from dev: debug-assertions, overflow-checks, no strip
+
 # wasmtime compiles components in the native tests, an unoptimized cranelift is very slow. These
 # crates are only built for the host, the components are unaffected.
 [profile.dev.package.cranelift-codegen]
