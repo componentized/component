@@ -1,2 +1,2 @@
-ghcr.io/componentized/oci/client:0.1.0-dev@sha256:f8803d55c62f994c2e134e2b821ab8a400bf379179a0941c4396ad54d21664f6
-ghcr.io/componentized/oci/client:0.1.0-dev_debug@sha256:5972e075b6dc9eff04ef7e986b81526ee657fb671ba3c8bec4e3aab61e70f2d6
+ghcr.io/componentized/oci/client:0.1.1@sha256:ca5797d64678f3f9138533839ddf234756c39624705376ca0166feccac9e37a8
+ghcr.io/componentized/oci/client:0.1.1_debug@sha256:d33132f600c9ae6e58e51866140c9971700a81d6f9efd784598422654885877a
